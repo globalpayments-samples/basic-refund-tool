@@ -580,8 +580,11 @@
                 cardDetails: cardDetails
             };
 
+            console.log(paymentData);
+            console.log(JSON.stringify(paymentData));
+
             try {
-                const response = await fetch(`${API_BASE}/charge`, {
+                const response = await fetch(`${API_BASE}/charge.php`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -627,7 +630,7 @@
         async function loadTransactions() {
             try {
                 const statusFilter = document.getElementById('filter-status').value;
-                let url = `${API_BASE}/transactions`;
+                let url = `${API_BASE}/transactions.php`;
                 if (statusFilter) {
                     url += `?status=${statusFilter}`;
                 }
@@ -831,7 +834,7 @@
             };
 
             try {
-                const response = await fetch(`${API_BASE}/refund`, {
+                const response = await fetch(`${API_BASE}/refund.php`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

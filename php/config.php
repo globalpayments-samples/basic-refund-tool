@@ -56,7 +56,7 @@ try {
     $config->country = 'US';
 
     // Set permissions specifically for client-side tokenization
-    $config->permissions = ['PMT_POST_Create'];
+    $config->permissions = ['PMT_POST_Create_Single'];
 
     // Generate session token for client-side tokenization
     try {
@@ -79,33 +79,6 @@ try {
 
     } catch (Exception $e) {
         error_log('Session token generation failed: ' . $e->getMessage());
-
-        // For debugging - let's also try a direct approach
-        try {
-            error_log('Attempting direct token generation...');
-
-            // Try creating a session token with specific permissions
-            $tokenConfig = new GpApiConfig();
-            $tokenConfig->appId = $_ENV['GP_API_APP_ID'] ?? '';
-            $tokenConfig->appKey = $_ENV['GP_API_APP_KEY'] ?? '';
-            $tokenConfig->environment = $isProduction ? Environment::PRODUCTION : Environment::TEST;
-            $tokenConfig->permissions = ['PMT_POST_Create']; // Tokenization permission
-            $tokenConfig->secondsToExpire = 3600; // 1 hour
-
-            ServicesContainer::configureService($tokenConfig, 'session');
-            $sessionResult = GpApiService::generateTransactionKey($tokenConfig);
-
-            if (is_object($sessionResult) && isset($sessionResult->accessToken)) {
-                $accessToken = $sessionResult->accessToken;
-                error_log('Direct session token generated: ' . substr($accessToken, 0, 8) . '...');
-            } else {
-                throw new Exception('Direct token generation also failed');
-            }
-
-        } catch (Exception $secondaryException) {
-            error_log('Direct token generation also failed: ' . $secondaryException->getMessage());
-            throw new Exception('Unable to generate session token for client-side use: ' . $e->getMessage());
-        }
     }
 
     // Return configuration for Basic Refund Tool
