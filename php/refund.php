@@ -18,7 +18,6 @@ declare(strict_types=1);
  */
 
 require_once 'PaymentUtils.php';
-require_once 'TransactionStorage.php';
 
 // Handle CORS
 PaymentUtils::handleCORS();
@@ -45,46 +44,21 @@ try {
 
     $transactionId = $data['transactionId'];
     $refundAmount = (float)$data['amount'];
+    $currency = $data['currency'] ?? 'USD';
     $reason = $data['reason'] ?? 'Refund requested';
-
-    // Get original transaction
-    $originalTransaction = TransactionStorage::getTransactionById($transactionId);
-    if (!$originalTransaction) {
-        PaymentUtils::sendErrorResponse(404, 'Original transaction not found', 'NOT_FOUND');
-    }
-
-    // Validate transaction is eligible for refund
-    if (!in_array($originalTransaction['status'], ['captured', 'partially_refunded'])) {
-        PaymentUtils::sendErrorResponse(400,
-            'Transaction is not eligible for refund. Status: ' . $originalTransaction['status'],
-            'INELIGIBLE_TRANSACTION'
-        );
-    }
-
-    $originalAmount = $originalTransaction['amount'];
-    $totalRefunded = $originalTransaction['totalRefunded'] ?? 0.0;
-    $currency = $originalTransaction['currency'];
-
-    // Validate refund amount using business rules
-    $validationErrors = PaymentUtils::validateRefundAmount($refundAmount, $originalAmount, $totalRefunded);
-    if (!empty($validationErrors)) {
-        PaymentUtils::sendErrorResponse(400, implode('; ', $validationErrors), 'VALIDATION_ERROR');
-    }
-
-    // Check if this is a full refund request
-    $isFullRefund = ($refundAmount == ($originalAmount - $totalRefunded));
 
     try {
         // Process refund with GP API
         $refundResult = PaymentUtils::processRefundWithGpApi(
-            $originalTransaction['transactionId'],
+            $transactionId,
             $refundAmount,
             $currency
         );
 
-        // Prepare refund data for storage
-        $refundData = [
+        // Prepare successful response
+        $response = [
             'refundId' => $refundResult['refund_id'],
+            'transactionId' => $transactionId,
             'amount' => $refundAmount,
             'currency' => $currency,
             'status' => $refundResult['status'],
@@ -94,43 +68,6 @@ try {
             'authorizationCode' => $refundResult['authorization_code'],
             'referenceNumber' => $refundResult['reference_number'],
             'reason' => $reason
-        ];
-
-        // Add refund to transaction storage
-        $refundStored = TransactionStorage::addRefund($transactionId, $refundData);
-        if (!$refundStored) {
-            error_log('Failed to store refund data for transaction: ' . $transactionId);
-            // Continue since the refund was processed successfully
-        }
-
-        // Get updated transaction data
-        $updatedTransaction = TransactionStorage::getTransactionById($transactionId);
-
-        // Prepare successful response
-        $response = [
-            'refund' => [
-                'refundId' => $refundResult['refund_id'],
-                'amount' => $refundAmount,
-                'currency' => $currency,
-                'status' => $refundResult['status'],
-                'timestamp' => $refundResult['timestamp'],
-                'responseCode' => $refundResult['response_code'],
-                'responseMessage' => $refundResult['response_message'],
-                'authorizationCode' => $refundResult['authorization_code'],
-                'referenceNumber' => $refundResult['reference_number'],
-                'reason' => $reason,
-                'refundType' => $isFullRefund ? 'full' : 'partial'
-            ],
-            'transaction' => [
-                'id' => $updatedTransaction['id'] ?? $originalTransaction['id'],
-                'transactionId' => $originalTransaction['transactionId'],
-                'originalAmount' => $originalAmount,
-                'totalRefunded' => $updatedTransaction['totalRefunded'] ?? ($totalRefunded + $refundAmount),
-                'remainingBalance' => $updatedTransaction['remainingBalance'] ?? ($originalAmount - $totalRefunded - $refundAmount),
-                'status' => $updatedTransaction['status'] ?? $originalTransaction['status'],
-                'refundCount' => count($updatedTransaction['refunds'] ?? [])
-            ],
-            'stored' => $refundStored
         ];
 
         PaymentUtils::sendSuccessResponse($response, 'Refund processed successfully');

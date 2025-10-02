@@ -3,13 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Payments - Developer Example</title>
+    <title>Global Payments - Basic Refund Tool</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://globalpayments-samples.github.io/css/styles.css">
     <style>
         .credit-card-card-expiration, .credit-card-card-cvv { margin: 0 !important; }
+        .gp-hidden { display: none !important; }
+        .transaction-success {
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+            border-radius: 8px;
+            padding: 24px;
+            margin: 24px 0;
+        }
+        .transaction-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 16px 0;
+        }
+        .info-item {
+            padding: 12px;
+            background: #f8f9fa;
+            border-radius: 4px;
+        }
+        .info-label {
+            font-size: 12px;
+            color: #666;
+            font-weight: 600;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+        .info-value {
+            font-size: 16px;
+            color: #333;
+            font-weight: 500;
+        }
+        .refund-section {
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 2px solid #ddd;
+        }
+        .refund-result {
+            margin-top: 16px;
+            padding: 16px;
+            border-radius: 8px;
+        }
+        .refund-result.success {
+            background: #e8f5e9;
+            border: 1px solid #4caf50;
+            color: #2e7d32;
+        }
+        .refund-result.error {
+            background: #ffebee;
+            border: 1px solid #ef5350;
+            color: #c62828;
+        }
     </style>
 </head>
 <body>
@@ -34,211 +85,146 @@
 
     <div class="gp-container">
         <!-- Page Title -->
-        <h1 class="gp-page-title">Basic Refund Tool</h1>
-        <p class="gp-page-subtitle">Process payments and manage refunds using Global Payments API with comprehensive transaction tracking.</p>
+        <h1 class="gp-page-title">Payment & Refund Tool</h1>
+        <p class="gp-page-subtitle">Process payments and refunds using Global Payments API.</p>
 
-        <!-- Tabs -->
-        <div class="gp-tabs">
-            <div class="gp-tab-list">
-                <button class="gp-tab-button active" data-tab="payment-form">Payment Processing</button>
-                <button class="gp-tab-button" data-tab="transaction-dashboard">Transaction Dashboard</button>
+        <!-- Payment Form Card -->
+        <div class="gp-card">
+            <div class="gp-card-header">
+                <h2 class="gp-card-title">Process Payment</h2>
+                <p class="gp-card-description">
+                    Enter payment details below to process a charge.
+                </p>
             </div>
 
-            <!-- Payment Form Tab -->
-            <div class="gp-tab-content active" id="payment-form">
-                <div class="gp-card">
-                    <div class="gp-card-header">
-                        <h2 class="gp-card-title">Process Payment</h2>
-                        <p class="gp-card-description">
-                            Process secure payments using Global Payments API. Transactions are stored for refund management.
-                        </p>
-                    </div>
-
-                    <form id="payment-form" class="gp-form">
-                        <div class="gp-form-group">
-                            <label for="amount" class="gp-label">Amount ($):</label>
-                            <input type="number" id="amount" name="amount" class="gp-input" min="0.01" step="0.01" value="25.00" required>
-                        </div>
-
-                        <div class="gp-form-group">
-                            <label for="billing_zip" class="gp-label">Billing Zip Code:</label>
-                            <input type="text" id="billing_zip" name="billing_zip" class="gp-input" placeholder="12345" required>
-                        </div>
-
-                        <!-- Test Card Helper -->
-                        <div class="gp-form-group" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
-                            <label for="test-card-select" class="gp-label" style="margin-bottom: 8px;">
-                                🧪 Use Global Payments Test Card:
-                            </label>
-                            <select id="test-card-select" class="gp-select">
-                                <option value="">Select a test card...</option>
-                                <option value="visa">Visa Success - 4263970000005262</option>
-                                <option value="mastercard">Mastercard Success - 5425230000004415</option>
-                                <option value="amex">American Express Success - 374101000000608</option>
-                                <option value="discover">Discover Success - 6011000000000087</option>
-                                <option value="jcb">JCB Success - 3566000000000000</option>
-                                <option value="diners">Diners Club Success - 36256000000725</option>
-                            </select>
-                            <small style="color: #6c757d; font-size: 12px; margin-top: 4px; display: block;">
-                                These are official Global Payments test cards. Select to auto-fill the payment form.
-                            </small>
-                        </div>
-
-                        <!-- Test Card Data Display -->
-                        <div id="test-card-data" class="gp-hidden" style="background: #e8f4fd; color: #0c5460; border: 1px solid #bee5eb; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                <div>
-                                    <strong id="test-card-status">📋 Selected Test Card Data:</strong>
-                                    <div id="test-card-details" style="font-family: monospace; margin-top: 12px; padding: 12px; background: #f8f9fa; border-radius: 4px; font-size: 14px;">
-                                        <!-- Card details will be inserted here -->
-                                    </div>
-                                </div>
-                                <button type="button" onclick="hideTestCardData()" style="background: none; border: none; font-size: 18px; cursor: pointer; color: #0c5460; padding: 0; margin-left: 16px;">&times;</button>
-                            </div>
-                        </div>
-
-                        <div class="gp-form-group">
-                            <label class="gp-label">Credit Card Information:</label>
-                            <div id="credit-card"></div>
-                        </div>
-
-                        <!-- Hidden field to store the token -->
-                        <input type="hidden" id="payment-token" name="paymentToken">
-                    </form>
-
-                    <div id="payment-result" class="gp-hidden">
-                        <!-- Payment results will be displayed here -->
-                    </div>
+            <form id="payment-form" class="gp-form">
+                <div class="gp-form-group">
+                    <label for="amount" class="gp-label">Amount ($):</label>
+                    <input type="number" id="amount" name="amount" class="gp-input" min="0.01" step="0.01" value="25.00" required>
                 </div>
-            </div>
 
-            <!-- Transaction Dashboard Tab -->
-            <div class="gp-tab-content" id="transaction-dashboard">
-                <div class="gp-card">
-                    <div class="gp-card-header">
-                        <h2 class="gp-card-title">Transaction Dashboard</h2>
-                        <p class="gp-card-description">
-                            View and manage all processed transactions. Process full or partial refunds with proper validation.
-                        </p>
-                    </div>
+                <div class="gp-form-group">
+                    <label for="billing_zip" class="gp-label">Billing Zip Code:</label>
+                    <input type="text" id="billing_zip" name="billing_zip" class="gp-input" placeholder="12345" required>
+                </div>
 
-                    <!-- Summary Statistics -->
-                    <div id="transaction-summary" class="gp-hidden">
-                        <div class="gp-form-row" style="margin-bottom: 20px;">
-                            <div class="gp-card" style="padding: 16px; text-align: center; background: #f8f9fa;">
-                                <h4 style="margin: 0; color: #28a745;">Total Transactions</h4>
-                                <p id="summary-total" style="font-size: 24px; font-weight: bold; margin: 8px 0 0 0;">0</p>
-                            </div>
-                            <div class="gp-card" style="padding: 16px; text-align: center; background: #f8f9fa;">
-                                <h4 style="margin: 0; color: #007bff;">Total Amount</h4>
-                                <p id="summary-amount" style="font-size: 24px; font-weight: bold; margin: 8px 0 0 0;">$0.00</p>
-                            </div>
-                            <div class="gp-card" style="padding: 16px; text-align: center; background: #f8f9fa;">
-                                <h4 style="margin: 0; color: #dc3545;">Total Refunded</h4>
-                                <p id="summary-refunded" style="font-size: 24px; font-weight: bold; margin: 8px 0 0 0;">$0.00</p>
+                <!-- Test Card Helper -->
+                <div class="gp-form-group" style="background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                    <label for="test-card-select" class="gp-label" style="margin-bottom: 8px;">
+                        🧪 Use Global Payments Test Card:
+                    </label>
+                    <select id="test-card-select" class="gp-select">
+                        <option value="">Select a test card...</option>
+                        <option value="visa">Visa Success - 4263970000005262</option>
+                        <option value="mastercard">Mastercard Success - 5425230000004415</option>
+                        <option value="amex">American Express Success - 374101000000608</option>
+                        <option value="discover">Discover Success - 6011000000000087</option>
+                        <option value="jcb">JCB Success - 3566000000000000</option>
+                        <option value="diners">Diners Club Success - 36256000000725</option>
+                    </select>
+                    <small style="color: #6c757d; font-size: 12px; margin-top: 4px; display: block;">
+                        These are official Global Payments test cards. Select to auto-fill the payment form.
+                    </small>
+                </div>
+
+                <!-- Test Card Data Display -->
+                <div id="test-card-data" class="gp-hidden" style="background: #e8f4fd; color: #0c5460; border: 1px solid #bee5eb; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <strong id="test-card-status">📋 Selected Test Card Data:</strong>
+                            <div id="test-card-details" style="font-family: monospace; margin-top: 12px; padding: 12px; background: #f8f9fa; border-radius: 4px; font-size: 14px;">
+                                <!-- Card details will be inserted here -->
                             </div>
                         </div>
-                    </div>
-
-                    <!-- Filters -->
-                    <div class="gp-form-row" style="margin-bottom: 20px;">
-                        <div class="gp-form-group">
-                            <label for="filter-status" class="gp-label">Filter by Status:</label>
-                            <select id="filter-status" class="gp-select">
-                                <option value="">All Statuses</option>
-                                <option value="captured">Captured</option>
-                                <option value="partially_refunded">Partially Refunded</option>
-                                <option value="refunded">Fully Refunded</option>
-                            </select>
-                        </div>
-                        <div class="gp-form-group">
-                            <button id="refresh-transactions" class="gp-button gp-button-secondary">
-                                Refresh
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Transactions List -->
-                    <div id="transactions-list">
-                        <div class="gp-loading">Loading transactions...</div>
+                        <button type="button" onclick="hideTestCardData()" style="background: none; border: none; font-size: 18px; cursor: pointer; color: #0c5460; padding: 0; margin-left: 16px;">&times;</button>
                     </div>
                 </div>
 
-                <!-- Refund Modal -->
-                <div id="refund-modal-overlay" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; justify-content: center; align-items: center;">
-                    <div class="modal-content" style="background: white; border-radius: 12px; padding: 32px; width: 90%; max-width: 500px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);">
-                        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
-                            <h3 style="margin: 0; color: #333; font-size: 20px; font-weight: 600;">Process Refund</h3>
-                            <button onclick="closeRefundModal()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #666; padding: 0; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center;">&times;</button>
-                        </div>
+                <div class="gp-form-group">
+                    <label class="gp-label">Credit Card Information:</label>
+                    <div id="credit-card"></div>
+                </div>
 
-                        <div class="modal-body">
-                            <!-- Transaction details (read-only) -->
-                            <div class="gp-form-group">
-                                <label class="gp-label">Transaction:</label>
-                                <div id="refund-transaction-display" class="gp-input" style="background: #f5f5f5; border: 1px solid #ddd; color: #666; cursor: not-allowed;">
-                                    <!-- Transaction details will be inserted here -->
-                                </div>
-                            </div>
+                <!-- Hidden field to store the token -->
+                <input type="hidden" id="payment-token" name="paymentToken">
 
+                <button type="submit" class="gp-button gp-button-primary gp-button-full">
+                    Process Payment
+                </button>
+            </form>
+
+            <!-- Transaction Success Display -->
+            <div id="transaction-success" class="transaction-success gp-hidden">
+                <h3 style="color: #2e7d32; margin: 0 0 16px 0;">✅ Payment Successful!</h3>
+
+                <div class="transaction-info">
+                    <div class="info-item">
+                        <div class="info-label">Transaction ID</div>
+                        <div class="info-value" id="txn-id">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Amount</div>
+                        <div class="info-value" id="txn-amount">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Card</div>
+                        <div class="info-value" id="txn-card">-</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Status</div>
+                        <div class="info-value" id="txn-status">-</div>
+                    </div>
+                </div>
+
+                <!-- Refund Section -->
+                <div class="refund-section">
+                    <h4 style="margin: 0 0 16px 0;">Process Refund</h4>
+
+                    <div class="gp-form">
+                        <div class="gp-form-group">
+                            <label class="gp-label">Refund Type:</label>
                             <div class="gp-form-row">
-                                <div class="gp-form-group">
-                                    <label class="gp-label">Original Amount:</label>
-                                    <div id="refund-original-amount" class="gp-input" style="background: #f5f5f5; border: 1px solid #ddd; color: #666; cursor: not-allowed;">$0.00</div>
-                                </div>
-                                <div class="gp-form-group">
-                                    <label class="gp-label">Available to Refund:</label>
-                                    <div id="refund-available-amount" class="gp-input" style="background: #f5f5f5; border: 1px solid #ddd; color: #666; cursor: not-allowed;">$0.00</div>
-                                </div>
-                            </div>
-
-                            <!-- Refund options -->
-                            <div class="gp-form-group">
-                                <label class="gp-label">Refund Type:</label>
-                                <div class="gp-form-row">
-                                    <label class="gp-checkbox-label">
-                                        <input type="radio" name="refund-type" value="full" class="gp-checkbox" checked>
-                                        Full Refund
-                                    </label>
-                                    <label class="gp-checkbox-label">
-                                        <input type="radio" name="refund-type" value="partial" class="gp-checkbox">
-                                        Partial Refund
-                                    </label>
-                                </div>
-                            </div>
-
-                            <div class="gp-form-group" id="partial-refund-amount" style="display: none;">
-                                <label for="refund-amount" class="gp-label">Refund Amount ($):</label>
-                                <input type="number" id="refund-amount" class="gp-input" min="0.01" step="0.01" placeholder="0.00">
-                                <small style="color: #6c757d; font-size: 12px; margin-top: 4px; display: block;">
-                                    Maximum refundable amount (including 15% tolerance): <span id="max-refund-amount">$0.00</span>
-                                </small>
-                            </div>
-
-                            <div class="gp-form-group">
-                                <label for="refund-reason" class="gp-label">Reason (Optional):</label>
-                                <input type="text" id="refund-reason" class="gp-input" placeholder="Customer request, duplicate charge, etc.">
+                                <label class="gp-checkbox-label">
+                                    <input type="radio" name="refund-type" value="full" class="gp-checkbox" checked>
+                                    Full Refund
+                                </label>
+                                <label class="gp-checkbox-label">
+                                    <input type="radio" name="refund-type" value="partial" class="gp-checkbox">
+                                    Partial Refund
+                                </label>
                             </div>
                         </div>
 
-                        <div class="modal-footer" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px; border-top: 1px solid #eee; padding-top: 24px;">
-                            <button onclick="closeRefundModal()" class="gp-button gp-button-secondary">Cancel</button>
-                            <button onclick="processRefund()" class="gp-button gp-button-primary">Process Refund</button>
+                        <div class="gp-form-group gp-hidden" id="partial-refund-amount">
+                            <label for="refund-amount" class="gp-label">Refund Amount ($):</label>
+                            <input type="number" id="refund-amount" class="gp-input" min="0.01" step="0.01" placeholder="0.00">
                         </div>
+
+                        <div class="gp-form-group">
+                            <label for="refund-reason" class="gp-label">Reason (Optional):</label>
+                            <input type="text" id="refund-reason" class="gp-input" placeholder="Customer request, duplicate charge, etc.">
+                        </div>
+
+                        <button type="button" onclick="processRefund()" class="gp-button gp-button-primary gp-button-full">
+                            Process Refund
+                        </button>
+                    </div>
+
+                    <!-- Refund Result -->
+                    <div id="refund-result" class="gp-hidden refund-result">
+                        <!-- Refund result will be displayed here -->
                     </div>
                 </div>
+            </div>
+
+            <!-- Error Display -->
+            <div id="error-message" class="gp-hidden" style="margin-top: 16px; padding: 16px; background: #ffebee; color: #c62828; border: 1px solid #ef5350; border-radius: 8px;">
+                <!-- Error messages will be displayed here -->
             </div>
         </div>
     </div>
 
     <!-- Footer -->
-    <!-- 
-        DEVELOPER NOTE: Update the following footer information to match your business:
-        - Company name and copyright year
-        - Update all links to point to your actual Terms of Service, Privacy Policy, and Refund Policy pages
-        - Refund Policy link is typically required by payment processor underwriting in addition to Terms and Privacy
-        - Ensure all linked policies are accessible and up-to-date before going live
-    -->
     <footer class="gp-footer">
         <div class="gp-container">
             <div class="gp-footer-content">
@@ -261,41 +247,13 @@
     <!-- Global Payments JavaScript SDK -->
     <script src="https://js.globalpay.com/4.1.11/globalpayments.js"></script>
     <script>
-        // Tab functionality
-        document.addEventListener('DOMContentLoaded', function() {
-            const tabButtons = document.querySelectorAll('.gp-tab-button');
-            const tabContents = document.querySelectorAll('.gp-tab-content');
-
-            tabButtons.forEach(button => {
-                button.addEventListener('click', () => {
-                    // Remove active class from all buttons and contents
-                    tabButtons.forEach(btn => btn.classList.remove('active'));
-                    tabContents.forEach(content => content.classList.remove('active'));
-
-                    // Add active class to clicked button and corresponding content
-                    button.classList.add('active');
-                    const tabId = button.getAttribute('data-tab');
-                    document.getElementById(tabId).classList.add('active');
-
-                    // Load transactions when dashboard tab is clicked
-                    if (tabId === 'transaction-dashboard') {
-                        loadTransactions();
-                        loadTransactionSummary();
-                    }
-                });
-            });
-
-            // Initialize the application
-            initializeApp();
-        });
-
         // API base URL
         const API_BASE = window.location.origin;
 
         // Global Payments configuration
         let gpConfig = null;
         let cardForm = null;
-        let currentTransaction = null; // For refund modal
+        let currentTransaction = null; // Store current transaction for refunds
 
         // Global Payments test cards configuration
         const testCards = {
@@ -385,8 +343,6 @@
                             fieldValidation: { enabled: true }
                         });
 
-                        console.log(gpConfig);
-
                         // Create the card form
                         cardForm = GlobalPayments.creditCard.form('#credit-card', {
                             style: "gp-default"
@@ -399,7 +355,7 @@
 
                         cardForm.on('token-error', (error) => {
                             console.error('Tokenization error:', error);
-                            displayError('payment-result', `Error tokenizing card: ${error.message}`);
+                            displayError(`Error tokenizing card: ${error.message}`);
                         });
 
                         // Enable form when card form is ready
@@ -412,7 +368,6 @@
                                     cardForm.frames["card-expiration"].setValue(cardData.expiry.replace('/', ''));
                                     cardForm.frames["card-cvv"].setValue(cardData.cvv);
                                     cardForm.frames["card-holder-name"].setValue('Test User');
-                                    console.log('Test card data re-applied after form initialization:', cardData.brand);
                                 } catch (error) {
                                     console.warn('Failed to re-apply test card data:', error);
                                 }
@@ -433,23 +388,17 @@
                 }
             } catch (error) {
                 console.error('Payment form initialization failed:', error);
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'gp-alert gp-alert-error';
-                errorDiv.style.marginTop = '16px';
-                errorDiv.innerHTML = `<strong>Error:</strong> Unable to initialize payment form. Please check your configuration and refresh the page.<br><small>Details: ${error.message}</small>`;
-                form.parentNode.insertBefore(errorDiv, form);
-
-                // Re-enable form for debugging
+                displayError(`Unable to initialize payment form. Please check your configuration and refresh the page.<br><small>Details: ${error.message}</small>`);
                 form.style.opacity = '1';
                 form.style.pointerEvents = 'auto';
             }
         }
 
         // Initialize application
-        async function initializeApp() {
-            await initializePaymentForm();
+        document.addEventListener('DOMContentLoaded', function() {
+            initializePaymentForm();
             setupEventHandlers();
-        }
+        });
 
         // Setup event handlers
         function setupEventHandlers() {
@@ -464,20 +413,11 @@
                 }
             });
 
-            // Refund modal handlers
+            // Refund type change
             const refundTypeRadios = document.querySelectorAll('input[name="refund-type"]');
             refundTypeRadios.forEach(radio => {
                 radio.addEventListener('change', handleRefundTypeChange);
             });
-
-            // Refresh transactions
-            document.getElementById('refresh-transactions').addEventListener('click', () => {
-                loadTransactions();
-                loadTransactionSummary();
-            });
-
-            // Filter by status
-            document.getElementById('filter-status').addEventListener('change', loadTransactions);
         }
 
         // Handle test card selection
@@ -487,20 +427,13 @@
 
             const cardData = testCards[selectedCard];
             if (cardData) {
-                // Try setValue method for auto-fill
-                let fillSuccessful = false;
                 try {
-                    resetForm();
-                    window.selectedTestCard = cardData; // Store globally for form re-initialization
-                    fillSuccessful = true;
+                    window.selectedTestCard = cardData;
+                    showTestCardData(cardData, true);
                 } catch (error) {
-                    console.warn('setValue auto-fill failed:', error);
-                    fillSuccessful = false;
+                    console.warn('Test card selection failed:', error);
                 }
-
-                // Show the card data with success status
-                showTestCardData(cardData, fillSuccessful);
-                event.target.value = ''; // Reset selection
+                event.target.value = '';
             }
         }
 
@@ -510,9 +443,8 @@
             const statusElement = document.getElementById('test-card-status');
             const detailsElement = document.getElementById('test-card-details');
 
-            // Update status based on auto-fill success
             const statusMessage = autoFillWorked ?
-                '✅ Test Card Auto-Filled:' :
+                '✅ Test Card Selected:' :
                 '📋 Selected Test Card Data:';
 
             statusElement.textContent = statusMessage;
@@ -520,16 +452,7 @@
                 <strong>Card Number:</strong> ${cardData.number}<br>
                 <strong>Expiration:</strong> ${cardData.expiry}<br>
                 <strong>CVV:</strong> ${cardData.cvv}<br>
-                <strong>Brand:</strong> ${cardData.brand}<br>
-                ${autoFillWorked ?
-                    `<div style="font-size: 12px; color: #28a745; background: #d4edda; padding: 8px; border-radius: 4px; margin-top: 8px;">
-                        <strong>✅ Auto-Fill Success:</strong> Card details have been automatically populated in the form below.
-                        You can now click "Process Payment" to continue.
-                    </div>` :
-                    `<div style="font-size: 12px; color: #856404; background: #fff3cd; padding: 8px; border-radius: 4px; margin-top: 8px;">
-                        <strong>ℹ️ Manual Entry:</strong> Please enter the card details shown above into the form below.
-                    </div>`
-                }
+                <strong>Brand:</strong> ${cardData.brand}
             `;
 
             testCardElement.classList.remove('gp-hidden');
@@ -540,27 +463,6 @@
             document.getElementById('test-card-data').classList.add('gp-hidden');
         }
 
-        // Reset form fields
-        function resetForm() {
-            try {
-                // Clear any previous test card selection
-                window.selectedTestCard = null;
-
-                // Reset payment-specific fields, keep customer info
-                document.getElementById('payment-token').value = '';
-                document.querySelectorAll('#credit-card>*').forEach((el) => {el.parentElement.removeChild(el);});
-                cardForm.dispose();
-                initializePaymentForm();
-                
-                // Clear the payment token
-                document.getElementById('payment-token').value = '';
-
-                console.log('Form reset successfully');
-            } catch (error) {
-                console.warn('Form reset failed:', error);
-            }
-        }
-
         // Submit payment
         async function submitPayment(cardDetails) {
             const token = document.getElementById('payment-token').value;
@@ -568,7 +470,7 @@
             const billingZip = document.getElementById('billing_zip').value;
 
             if (!token) {
-                displayError('payment-result', 'No token received from tokenization');
+                displayError('No token received from tokenization');
                 return;
             }
 
@@ -579,9 +481,6 @@
                 billing_zip: billingZip,
                 cardDetails: cardDetails
             };
-
-            console.log(paymentData);
-            console.log(JSON.stringify(paymentData));
 
             try {
                 const response = await fetch(`${API_BASE}/charge.php`, {
@@ -595,228 +494,59 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    displaySuccess('payment-result', result.data, result.message);
-
-                    // Reset form and clear test card selection
-                    document.getElementById('payment-form').reset();
-                    document.getElementById('payment-token').value = '';
-                    document.getElementById('amount').value = '25.00';
-                    window.selectedTestCard = null;
-                    hideTestCardData();
-
-                    // Refresh card form
-                    if (cardForm) {
-                        document.querySelectorAll('#credit-card>*').forEach((el) => {
-                            el.parentElement.removeChild(el);
-                        });
-                        cardForm.dispose();
-                        initializePaymentForm();
-                    }
-
-                    // Auto-hide success message after 5 seconds
-                    setTimeout(() => {
-                        document.getElementById('payment-result').classList.add('gp-hidden');
-                    }, 5000);
-
-                } else {
-                    displayError('payment-result', result.message || 'Payment processing failed');
-                }
-            } catch (error) {
-                displayError('payment-result', 'Error processing payment: ' + error.message);
-            }
-        }
-
-        // Load transactions
-        async function loadTransactions() {
-            try {
-                const statusFilter = document.getElementById('filter-status').value;
-                let url = `${API_BASE}/transactions.php`;
-                if (statusFilter) {
-                    url += `?status=${statusFilter}`;
-                }
-
-                const response = await fetch(url);
-                const result = await response.json();
-
-                if (result.success) {
-                    displayTransactions(result.data);
-                } else {
-                    displayError('transactions-list', 'Failed to load transactions');
-                }
-            } catch (error) {
-                displayError('transactions-list', 'Error loading transactions: ' + error.message);
-            }
-        }
-
-        // Load transaction summary
-        async function loadTransactionSummary() {
-            try {
-                const response = await fetch(`${API_BASE}/transactions/summary`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    }
-                });
-                const result = await response.json();
-
-                if (result.success) {
-                    const summary = result.data;
-                    document.getElementById('summary-total').textContent = summary.total_transactions;
-                    document.getElementById('summary-amount').textContent = `$${summary.total_amount.toFixed(2)}`;
-                    document.getElementById('summary-refunded').textContent = `$${summary.total_refunded.toFixed(2)}`;
-                    document.getElementById('transaction-summary').classList.remove('gp-hidden');
-                }
-            } catch (error) {
-                console.error('Error loading transaction summary:', error);
-            }
-        }
-
-        // Display transactions
-        function displayTransactions(transactions) {
-            const container = document.getElementById('transactions-list');
-
-            if (transactions.length === 0) {
-                container.innerHTML = '<p class="gp-text-muted">No transactions found. Process a payment to see transactions here.</p>';
-                return;
-            }
-
-            const transactionsHtml = transactions.map(transaction => {
-                const statusColor = getStatusColor(transaction.status);
-                const canRefund = transaction.canRefund && transaction.remainingBalance > 0;
-
-                return `
-                <div class="gp-card gp-mb-md">
-                    <div class="gp-card-body">
-                        <div style="display: flex; justify-content: space-between; align-items: start;">
-                            <div style="flex: 1;">
-                                <h4 class="gp-text-primary">
-                                    ${transaction.paymentMethod.brand} •••• ${transaction.paymentMethod.last4}
-                                    <span style="font-size: 14px; font-weight: normal; color: #666;">
-                                        ${new Date(transaction.timestamp).toLocaleString()}
-                                    </span>
-                                </h4>
-                                <p style="font-size: 18px; font-weight: bold; margin: 8px 0;">
-                                    $${transaction.amount.toFixed(2)} ${transaction.currency}
-                                </p>
-                                <div style="margin: 8px 0;">
-                                    <span class="gp-badge" style="background-color: ${statusColor}; color: white;">
-                                        ${transaction.status.toUpperCase().replace('_', ' ')}
-                                    </span>
-                                    ${transaction.totalRefunded > 0 ? `<span style="color: #dc3545; font-size: 12px; margin-left: 8px;">Refunded: $${transaction.totalRefunded.toFixed(2)}</span>` : ''}
-                                </div>
-                                <p style="font-size: 12px; color: #666; margin: 4px 0;">
-                                    Transaction ID: ${transaction.transactionId}
-                                </p>
-                                ${transaction.refunds && transaction.refunds.length > 0 ? `
-                                    <details style="margin-top: 8px;">
-                                        <summary style="cursor: pointer; font-size: 12px; color: #007bff;">
-                                            View Refunds (${transaction.refunds.length})
-                                        </summary>
-                                        <div style="margin-left: 16px; margin-top: 8px;">
-                                            ${transaction.refunds.map(refund => `
-                                                <p style="font-size: 11px; color: #666; margin: 2px 0;">
-                                                    $${refund.amount.toFixed(2)} - ${new Date(refund.timestamp).toLocaleString()}
-                                                    ${refund.reason ? `(${refund.reason})` : ''}
-                                                </p>
-                                            `).join('')}
-                                        </div>
-                                    </details>
-                                ` : ''}
-                            </div>
-                            <div style="display: flex; gap: 8px; align-items: center; margin-left: 16px;">
-                                ${canRefund ? `
-                                    <button class="gp-button gp-button-primary" style="padding: 6px 12px; font-size: 12px;"
-                                            onclick="openRefundModal('${transaction.id}')">
-                                        Refund
-                                    </button>
-                                ` : `
-                                    <span style="color: #6c757d; font-size: 12px;">
-                                        ${transaction.status === 'refunded' ? 'Fully Refunded' : 'Not Refundable'}
-                                    </span>
-                                `}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                `;
-            }).join('');
-
-            container.innerHTML = transactionsHtml;
-        }
-
-        // Get status color
-        function getStatusColor(status) {
-            switch(status) {
-                case 'captured': return '#28a745';
-                case 'partially_refunded': return '#ffc107';
-                case 'refunded': return '#dc3545';
-                default: return '#6c757d';
-            }
-        }
-
-        // Open refund modal
-        async function openRefundModal(transactionId) {
-            try {
-                const response = await fetch(`${API_BASE}/transactions/${transactionId}`);
-                const result = await response.json();
-
-                if (result.success) {
                     currentTransaction = result.data;
-                    populateRefundModal(currentTransaction);
-                    document.getElementById('refund-modal-overlay').style.display = 'flex';
+                    displayTransactionSuccess(result.data);
+                    hideError();
                 } else {
-                    alert('Error loading transaction details');
+                    displayError(result.message || 'Payment processing failed');
                 }
             } catch (error) {
-                alert('Error loading transaction: ' + error.message);
+                displayError('Error processing payment: ' + error.message);
             }
         }
 
-        // Close refund modal
-        function closeRefundModal() {
-            document.getElementById('refund-modal-overlay').style.display = 'none';
-            currentTransaction = null;
+        // Display transaction success
+        function displayTransactionSuccess(data) {
+            document.getElementById('txn-id').textContent = data.transactionId;
+            document.getElementById('txn-amount').textContent = `$${data.amount.toFixed(2)} ${data.currency}`;
+            document.getElementById('txn-card').textContent = `${data.paymentMethod.brand} •••• ${data.paymentMethod.last4}`;
+            document.getElementById('txn-status').textContent = data.status.toUpperCase();
 
-            // Reset form
+            document.getElementById('transaction-success').classList.remove('gp-hidden');
+            document.getElementById('refund-result').classList.add('gp-hidden');
+
+            // Reset refund form
             document.querySelector('input[name="refund-type"][value="full"]').checked = true;
-            document.getElementById('partial-refund-amount').style.display = 'none';
+            document.getElementById('partial-refund-amount').classList.add('gp-hidden');
             document.getElementById('refund-amount').value = '';
             document.getElementById('refund-reason').value = '';
-        }
-
-        // Populate refund modal
-        function populateRefundModal(transaction) {
-            document.getElementById('refund-transaction-display').textContent =
-                `${transaction.paymentMethod.brand} •••• ${transaction.paymentMethod.last4} - ${new Date(transaction.timestamp).toLocaleString()}`;
-
-            document.getElementById('refund-original-amount').textContent = `$${transaction.amount.toFixed(2)}`;
-            document.getElementById('refund-available-amount').textContent = `$${transaction.remainingBalance.toFixed(2)}`;
-
-            // Calculate maximum refundable amount (115% of original)
-            const maxRefund = transaction.amount * 1.15;
-            document.getElementById('max-refund-amount').textContent = `$${maxRefund.toFixed(2)}`;
         }
 
         // Handle refund type change
         function handleRefundTypeChange(event) {
             const partialAmountDiv = document.getElementById('partial-refund-amount');
             if (event.target.value === 'partial') {
-                partialAmountDiv.style.display = 'block';
-                document.getElementById('refund-amount').value = currentTransaction ? currentTransaction.remainingBalance.toFixed(2) : '';
+                partialAmountDiv.classList.remove('gp-hidden');
+                if (currentTransaction) {
+                    document.getElementById('refund-amount').value = currentTransaction.amount.toFixed(2);
+                }
             } else {
-                partialAmountDiv.style.display = 'none';
+                partialAmountDiv.classList.add('gp-hidden');
             }
         }
 
         // Process refund
         async function processRefund() {
-            if (!currentTransaction) return;
+            if (!currentTransaction) {
+                displayError('No transaction available for refund');
+                return;
+            }
 
             const refundType = document.querySelector('input[name="refund-type"]:checked').value;
             let refundAmount;
 
             if (refundType === 'full') {
-                refundAmount = currentTransaction.remainingBalance;
+                refundAmount = currentTransaction.amount;
             } else {
                 refundAmount = parseFloat(document.getElementById('refund-amount').value);
                 if (!refundAmount || refundAmount <= 0) {
@@ -830,6 +560,7 @@
             const refundData = {
                 transactionId: currentTransaction.transactionId,
                 amount: refundAmount,
+                currency: currentTransaction.currency,
                 reason: reason
             };
 
@@ -845,46 +576,54 @@
                 const result = await response.json();
 
                 if (result.success) {
-                    alert(`Refund processed successfully! Refund ID: ${result.data.refund.refundId}`);
-                    closeRefundModal();
-                    loadTransactions();
-                    loadTransactionSummary();
+                    displayRefundSuccess(result.data);
                 } else {
-                    alert('Refund failed: ' + result.message);
+                    displayRefundError(result.message || 'Refund processing failed');
                 }
             } catch (error) {
-                alert('Error processing refund: ' + error.message);
+                displayRefundError('Error processing refund: ' + error.message);
             }
         }
 
+        // Display refund success
+        function displayRefundSuccess(data) {
+            const resultDiv = document.getElementById('refund-result');
+            resultDiv.className = 'refund-result success';
+            resultDiv.innerHTML = `
+                <h4 style="margin: 0 0 12px 0;">✅ Refund Successful!</h4>
+                <div><strong>Refund ID:</strong> ${data.refundId}</div>
+                <div><strong>Amount:</strong> $${data.amount.toFixed(2)} ${data.currency}</div>
+                <div><strong>Status:</strong> ${data.status.toUpperCase()}</div>
+                <div><strong>Transaction ID:</strong> ${data.transactionId}</div>
+            `;
+            resultDiv.classList.remove('gp-hidden');
+        }
+
+        // Display refund error
+        function displayRefundError(message) {
+            const resultDiv = document.getElementById('refund-result');
+            resultDiv.className = 'refund-result error';
+            resultDiv.innerHTML = `
+                <h4 style="margin: 0 0 12px 0;">❌ Refund Failed</h4>
+                <div>${message}</div>
+            `;
+            resultDiv.classList.remove('gp-hidden');
+        }
+
         // Display error message
-        function displayError(containerId, message) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = `
-                <div class="gp-alert gp-alert-error" style="background-color: #ffebee; color: #c62828; border: 1px solid #ef5350;">
-                    <strong>Error:</strong> ${message}
-                </div>
-            `;
-            container.classList.remove('gp-hidden');
+        function displayError(message) {
+            const errorDiv = document.getElementById('error-message');
+            errorDiv.innerHTML = `<strong>Error:</strong> ${message}`;
+            errorDiv.classList.remove('gp-hidden');
+            document.getElementById('transaction-success').classList.add('gp-hidden');
         }
 
-        // Display success message
-        function displaySuccess(containerId, data, message) {
-            const container = document.getElementById(containerId);
-            container.innerHTML = `
-                <div class="gp-alert gp-alert-success" style="background-color: #e8f5e8; color: #2e7d32; border: 1px solid #4caf50;">
-                    <strong>Success!</strong> ${message}
-                    <div style="margin-top: 12px; font-size: 14px;">
-                        <strong>Transaction ID:</strong> ${data.transactionId}<br>
-                        <strong>Amount:</strong> $${data.amount.toFixed(2)} ${data.currency}<br>
-                        <strong>Payment Method:</strong> ${data.paymentMethod.brand} •••• ${data.paymentMethod.last4}
-                    </div>
-                </div>
-            `;
-            container.classList.remove('gp-hidden');
+        // Hide error message
+        function hideError() {
+            document.getElementById('error-message').classList.add('gp-hidden');
         }
 
-        // Fetch with retry logic (from working example)
+        // Fetch with retry logic
         async function fetchWithRetry(url, maxAttempts = 3) {
             for (let attempt = 1; attempt <= maxAttempts; attempt++) {
                 try {

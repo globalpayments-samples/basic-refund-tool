@@ -18,7 +18,6 @@ declare(strict_types=1);
  */
 
 require_once 'PaymentUtils.php';
-require_once 'TransactionStorage.php';
 
 // Handle CORS
 PaymentUtils::handleCORS();
@@ -95,46 +94,6 @@ try {
 
         error_log("[$requestId] GP API COMPLETED - Result: " . json_encode($paymentResult));
 
-        // Prepare transaction data for storage
-        $transactionData = [
-            'transactionId' => $paymentResult['transaction_id'],
-            'amount' => $amount,
-            'currency' => $currency,
-            'status' => $paymentResult['status'],
-            'paymentMethod' => [
-                'type' => 'card',
-                'brand' => $cardBrand,
-                'last4' => $last4,
-                'token' => $paymentToken
-            ],
-            'timestamp' => $paymentResult['timestamp'],
-            'responseCode' => $paymentResult['response_code'],
-            'responseMessage' => $paymentResult['response_message'],
-            'authorizationCode' => $paymentResult['authorization_code'],
-            'referenceNumber' => $paymentResult['reference_number']
-        ];
-
-        error_log("[$requestId] TRANSACTION DATA - Prepared: " . json_encode($transactionData));
-
-        // Validate transaction data
-        $validationErrors = TransactionStorage::validateTransactionData($transactionData);
-        if (!empty($validationErrors)) {
-            error_log("[$requestId] VALIDATION ERRORS: " . implode(', ', $validationErrors));
-            PaymentUtils::sendErrorResponse(400, 'Transaction validation failed: ' . implode(', ', $validationErrors), 'VALIDATION_ERROR');
-        }
-
-        error_log("[$requestId] VALIDATION - Transaction data passed validation");
-
-        // Store transaction in local storage
-        error_log("[$requestId] STORAGE - Attempting to store transaction");
-        $stored = TransactionStorage::addTransaction($transactionData);
-        if (!$stored) {
-            error_log("[$requestId] STORAGE ERROR - Failed to store transaction data");
-            // Still return success since payment went through, but log the storage failure
-        } else {
-            error_log("[$requestId] STORAGE SUCCESS - Transaction stored successfully");
-        }
-
         // Prepare successful response
         $response = [
             'transactionId' => $paymentResult['transaction_id'],
@@ -150,8 +109,7 @@ try {
                 'type' => 'card',
                 'brand' => $cardBrand,
                 'last4' => $last4
-            ],
-            'stored' => $stored
+            ]
         ];
 
         error_log("[$requestId] RESPONSE - Sending success response: " . json_encode($response));
