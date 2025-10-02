@@ -528,11 +528,25 @@
             document.getElementById('transaction-success').classList.remove('gp-hidden');
             document.getElementById('refund-result').classList.add('gp-hidden');
 
-            // Reset refund form
+            // Reset and re-enable refund form
             document.querySelector('input[name="refund-type"][value="full"]').checked = true;
             document.getElementById('partial-refund-amount').classList.add('gp-hidden');
             document.getElementById('refund-amount').value = '';
             document.getElementById('refund-reason').value = '';
+
+            // Re-enable all refund form fields
+            document.querySelectorAll('input[name="refund-type"]').forEach(radio => {
+                radio.disabled = false;
+            });
+            document.getElementById('refund-amount').disabled = false;
+            document.getElementById('refund-reason').disabled = false;
+
+            // Re-enable refund button
+            const refundButton = document.querySelector('button[onclick="processRefund()"]');
+            refundButton.disabled = false;
+            refundButton.textContent = 'Process Refund';
+            refundButton.style.opacity = '1';
+            refundButton.style.cursor = 'pointer';
         }
 
         // Handle refund type change
@@ -610,6 +624,20 @@
                 <div><strong>Transaction ID:</strong> ${data.transactionId}</div>
             `;
             resultDiv.classList.remove('gp-hidden');
+
+            // Disable refund form to prevent duplicate refunds
+            document.querySelectorAll('input[name="refund-type"]').forEach(radio => {
+                radio.disabled = true;
+            });
+            document.getElementById('refund-amount').disabled = true;
+            document.getElementById('refund-reason').disabled = true;
+
+            // Disable and update refund button
+            const refundButton = document.querySelector('button[onclick="processRefund()"]');
+            refundButton.disabled = true;
+            refundButton.textContent = 'Refund Already Processed';
+            refundButton.style.opacity = '0.6';
+            refundButton.style.cursor = 'not-allowed';
         }
 
         // Display refund error
