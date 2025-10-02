@@ -147,10 +147,6 @@
 
                 <!-- Hidden field to store the token -->
                 <input type="hidden" id="payment-token" name="paymentToken">
-
-                <button type="submit" class="gp-button gp-button-primary gp-button-full">
-                    Process Payment
-                </button>
             </form>
 
             <!-- Transaction Success Display -->
@@ -428,10 +424,12 @@
             const cardData = testCards[selectedCard];
             if (cardData) {
                 try {
+                    resetForm();
                     window.selectedTestCard = cardData;
                     showTestCardData(cardData, true);
                 } catch (error) {
                     console.warn('Test card selection failed:', error);
+                    showTestCardData(cardData, false);
                 }
                 event.target.value = '';
             }
@@ -461,6 +459,21 @@
         // Hide test card data
         function hideTestCardData() {
             document.getElementById('test-card-data').classList.add('gp-hidden');
+        }
+
+        // Reset form and reinitialize
+        function resetForm() {
+            try {
+                window.selectedTestCard = null;
+                document.getElementById('payment-token').value = '';
+                document.querySelectorAll('#credit-card>*').forEach((el) => {
+                    el.parentElement.removeChild(el);
+                });
+                cardForm.dispose();
+                initializePaymentForm();
+            } catch (error) {
+                console.warn('Form reset failed:', error);
+            }
         }
 
         // Submit payment
