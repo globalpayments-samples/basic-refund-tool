@@ -3,133 +3,122 @@
 declare(strict_types=1);
 
 /**
- * Card Payment Processing Script
+ * Legacy Payment Processing Script for Basic Refund Tool
  *
- * This script demonstrates card payment processing using the Global Payments SDK.
- * It handles tokenized card data and billing information to process payments
- * securely through the Global Payments API.
+ * This script maintains backward compatibility while redirecting
+ * processing to the new charge.php endpoint using GP API.
  *
- * PHP version 7.4 or higher
+ * PHP version 8.0 or higher
  *
  * @category  Payment_Processing
- * @package   GlobalPayments_Sample
+ * @package   GlobalPayments_BasicRefundTool
  * @author    Global Payments
  * @license   MIT License
  * @link      https://github.com/globalpayments
  */
 
-require_once 'vendor/autoload.php';
+require_once 'PaymentUtils.php';
+require_once 'TransactionStorage.php';
 
-use Dotenv\Dotenv;
-use GlobalPayments\Api\Entities\Address;
-use GlobalPayments\Api\Entities\Exceptions\ApiException;
-use GlobalPayments\Api\PaymentMethods\CreditCardData;
-use GlobalPayments\Api\ServiceConfigs\Gateways\PorticoConfig;
-use GlobalPayments\Api\ServicesContainer;
+// Handle CORS
+PaymentUtils::handleCORS();
 
-ini_set('display_errors', '0');
-
-/**
- * Configure the SDK
- *
- * Sets up the Global Payments SDK with necessary credentials and settings
- * loaded from environment variables.
- *
- * @return void
- */
-function configureSdk(): void
-{
-    $dotenv = Dotenv::createImmutable(__DIR__);
-    $dotenv->load();
-
-    $config = new PorticoConfig();
-    $config->secretApiKey = $_ENV['SECRET_API_KEY'];
-    $config->developerId = '000000';
-    $config->versionNumber = '0000';
-    $config->serviceUrl = 'https://cert.api2.heartlandportico.com';
-    
-    ServicesContainer::configureService($config);
-}
-
-/**
- * Sanitize postal code by removing invalid characters
- *
- * @param string|null $postalCode The postal code to sanitize
- *
- * @return string Sanitized postal code containing only alphanumeric
- *                characters and hyphens, limited to 10 characters
- */
-function sanitizePostalCode(?string $postalCode): string
-{
-    if ($postalCode === null) {
-        return '';
-    }
-    
-    $sanitized = preg_replace('/[^a-zA-Z0-9-]/', '', $postalCode);
-    return substr($sanitized, 0, 10);
-}
-
-// Initialize SDK configuration
-configureSdk();
+// Initialize SDK
+PaymentUtils::configureSdk();
 
 try {
-    // Validate required fields
-    if (!isset($_POST['payment_token'], $_POST['billing_zip'], $_POST['amount'])) {
-        throw new ApiException('Missing required fields');
-    }
-    
-    // Parse and validate amount
-    $amount = floatval($_POST['amount']);
-    if ($amount <= 0) {
-        throw new ApiException('Invalid amount');
-    }
+    // Check if this is a POST request from the legacy form
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        // Validate required fields
+        if (!isset($_POST['payment_token'], $_POST['billing_zip'], $_POST['amount'])) {
+            PaymentUtils::sendErrorResponse(400, 'Missing required fields', 'VALIDATION_ERROR');
+        }
 
-    // Initialize payment data using tokenized card information
-    $card = new CreditCardData();
-    $card->token = $_POST['payment_token'];
+        $amount = floatval($_POST['amount']);
+        if ($amount <= 0) {
+            PaymentUtils::sendErrorResponse(400, 'Invalid amount', 'VALIDATION_ERROR');
+        }
 
-    // Create billing address for AVS verification
-    $address = new Address();
-    $address->postalCode = sanitizePostalCode($_POST['billing_zip']);
-
-    // Process the payment transaction with specified amount
-    $response = $card->charge($amount)
-        ->withAllowDuplicates(true)
-        ->withCurrency('USD')
-        ->withAddress($address)
-        ->execute();
-    
-    // Verify transaction was successful
-    if ($response->responseCode !== '00') {
-        http_response_code(400);
-        echo json_encode([
-            'success' => false,
-            'message' => 'Payment processing failed',
-            'error' => [
-                'code' => 'PAYMENT_DECLINED',
-                'details' => $response->responseMessage
+        $paymentData = [
+            'payment_token' => $_POST['payment_token'],
+            'amount' => $amount,
+            'currency' => 'USD',
+            'billing_zip' => $_POST['billing_zip'],
+            'cardDetails' => [
+                'cardType' => 'unknown',
+                'cardLast4' => '0000'
             ]
-        ]);
-        exit;
+        ];
+
+        // Process with GP API
+        try {
+            $billingAddress = [
+                'postalCode' => $paymentData['billing_zip']
+            ];
+
+            $paymentResult = PaymentUtils::processPaymentWithGpApi(
+                $paymentData['payment_token'],
+                $paymentData['amount'],
+                $paymentData['currency'],
+                $billingAddress
+            );
+
+            // Store transaction
+            $transactionData = [
+                'transactionId' => $paymentResult['transaction_id'],
+                'amount' => $paymentData['amount'],
+                'currency' => $paymentData['currency'],
+                'status' => $paymentResult['status'],
+                'paymentMethod' => [
+                    'type' => 'card',
+                    'brand' => 'Unknown',
+                    'last4' => '0000',
+                    'token' => $paymentData['payment_token']
+                ],
+                'timestamp' => $paymentResult['timestamp'],
+                'responseCode' => $paymentResult['response_code'],
+                'responseMessage' => $paymentResult['response_message'],
+                'authorizationCode' => $paymentResult['authorization_code'],
+                'referenceNumber' => $paymentResult['reference_number']
+            ];
+
+            // Store in transaction storage
+            TransactionStorage::addTransaction($transactionData);
+
+            // Return legacy format response
+            echo json_encode([
+                'success' => true,
+                'message' => 'Payment successful! Transaction ID: ' . $paymentResult['transaction_id'],
+                'data' => [
+                    'transactionId' => $paymentResult['transaction_id'],
+                    'amount' => $paymentData['amount'],
+                    'currency' => $paymentData['currency'],
+                    'status' => $paymentResult['status'],
+                    'responseCode' => $paymentResult['response_code'],
+                    'responseMessage' => $paymentResult['response_message']
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            error_log('Legacy payment processing error: ' . $e->getMessage());
+
+            http_response_code(400);
+            echo json_encode([
+                'success' => false,
+                'message' => 'Payment processing failed',
+                'error' => [
+                    'code' => 'PAYMENT_ERROR',
+                    'details' => $e->getMessage()
+                ]
+            ]);
+        }
+
+    } else {
+        // Redirect GET requests to charge.php for consistency
+        PaymentUtils::sendErrorResponse(405, 'Method not allowed. Use POST to process payments.');
     }
 
-    // Return success response with transaction ID
-    echo json_encode([
-        'success' => true,
-        'message' => 'Payment successful! Transaction ID: ' . $response->transactionId,
-        'data' => [
-            'transactionId' => $response->transactionId
-        ]
-    ]);
-} catch (ApiException $e) {
-    // Handle payment processing errors
-    http_response_code(400);
-    echo json_encode([
-        'success' => false,
-        'message' => 'Payment processing failed',
-        'error' => [
-            'code' => 'API_ERROR',
-            'details' => $e->getMessage()
-        ]
-    ]);
+} catch (\Exception $e) {
+    error_log('Process payment error: ' . $e->getMessage());
+    PaymentUtils::sendErrorResponse(500, 'Internal server error', 'SERVER_ERROR');
 }

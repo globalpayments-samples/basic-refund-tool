@@ -1,16 +1,19 @@
 using GlobalPayments.Api;
 using GlobalPayments.Api.Entities;
 using GlobalPayments.Api.PaymentMethods;
+using GlobalPayments.Api.Services;
 using dotenv.net;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using GpEnvironment = GlobalPayments.Api.Entities.Environment;
 
-namespace CardPaymentSample;
+namespace BasicRefundTool;
 
 /// <summary>
-/// Card Payment Processing Application
-/// 
-/// This application demonstrates card payment processing using the Global Payments SDK.
-/// It provides endpoints for configuration and payment processing, handling tokenized
-/// card data to ensure secure payment processing.
+/// Payment & Refund Processing Application
+///
+/// This application demonstrates payment and refund processing using the Global Payments GP API.
+/// It provides endpoints for configuration, payment processing, and refund handling.
 /// </summary>
 public class Program
 {
@@ -20,172 +23,356 @@ public class Program
         DotEnv.Load();
 
         var builder = WebApplication.CreateBuilder(args);
-        
+
         var app = builder.Build();
+
+        // Configure CORS
+        app.Use(async (context, next) =>
+        {
+            context.Response.Headers.Append("Access-Control-Allow-Origin", "*");
+            context.Response.Headers.Append("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+            context.Response.Headers.Append("Access-Control-Allow-Headers", "Content-Type, Authorization");
+
+            if (context.Request.Method == "OPTIONS")
+            {
+                context.Response.StatusCode = 200;
+                return;
+            }
+
+            await next();
+        });
 
         // Configure static file serving for the payment form
         app.UseDefaultFiles();
         app.UseStaticFiles();
-        
+
         // Configure the SDK on startup
         ConfigureGlobalPaymentsSDK();
 
         ConfigureEndpoints(app);
-        
+
         var port = System.Environment.GetEnvironmentVariable("PORT") ?? "8000";
         app.Urls.Add($"http://0.0.0.0:{port}");
-        
+
         app.Run();
     }
 
     /// <summary>
-    /// Configures the Global Payments SDK with necessary credentials and settings.
-    /// This must be called before processing any payments.
+    /// Configures the Global Payments GP API SDK with necessary credentials and settings.
     /// </summary>
     private static void ConfigureGlobalPaymentsSDK()
     {
-        ServicesContainer.ConfigureService(new PorticoConfig
+        var config = new GpApiConfig
         {
-            SecretApiKey = System.Environment.GetEnvironmentVariable("SECRET_API_KEY"),
-            DeveloperId = "000000",
-            VersionNumber = "0000",
-            ServiceUrl = "https://cert.api2.heartlandportico.com"
-        });
+            AppId = System.Environment.GetEnvironmentVariable("GP_API_APP_ID"),
+            AppKey = System.Environment.GetEnvironmentVariable("GP_API_APP_KEY"),
+            Channel = Channel.CardNotPresent,
+            Country = "US",
+            Environment = System.Environment.GetEnvironmentVariable("GP_API_ENVIRONMENT")?.ToLower() == "production"
+                ? GpEnvironment.PRODUCTION
+                : GpEnvironment.TEST
+        };
+
+        ServicesContainer.ConfigureService(config);
     }
 
     /// <summary>
-    /// Configures the application's HTTP endpoints for payment processing.
+    /// Configures the application's HTTP endpoints.
     /// </summary>
-    /// <param name="app">The web application to configure</param>
     private static void ConfigureEndpoints(WebApplication app)
     {
-        // Configure HTTP endpoints
-        app.MapGet("/config", () => Results.Ok(new
-        { 
-            success = true,
-            data = new {
-                publicApiKey = System.Environment.GetEnvironmentVariable("PUBLIC_API_KEY")
-            }
-        }));
+        // Config endpoint - generates session token for client-side tokenization
+        app.MapGet("/config", () =>
+        {
+            try
+            {
+                var config = new GpApiConfig
+                {
+                    AppId = System.Environment.GetEnvironmentVariable("GP_API_APP_ID"),
+                    AppKey = System.Environment.GetEnvironmentVariable("GP_API_APP_KEY"),
+                    Channel = Channel.CardNotPresent,
+                    Country = "US",
+                    Environment = System.Environment.GetEnvironmentVariable("GP_API_ENVIRONMENT")?.ToLower() == "production"
+                        ? GpEnvironment.PRODUCTION
+                        : GpEnvironment.TEST,
+                    Permissions = new[] { "PMT_POST_Create_Single" }
+                };
 
-        ConfigurePaymentEndpoint(app);
+                var accessTokenInfo = GpApiService.GenerateTransactionKey(config);
+
+                return Results.Ok(new
+                {
+                    success = true,
+                    data = new
+                    {
+                        accessToken = accessTokenInfo.Token
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return Results.Json(new
+                {
+                    success = false,
+                    message = $"Error loading configuration: {ex.Message}"
+                }, statusCode: 500);
+            }
+        });
+
+        ConfigureChargeEndpoint(app);
+        ConfigureRefundEndpoint(app);
     }
 
     /// <summary>
     /// Sanitizes postal code input by removing invalid characters.
     /// </summary>
-    /// <param name="postalCode">The postal code to sanitize. Can be null.</param>
-    /// <returns>
-    /// A sanitized postal code containing only alphanumeric characters and hyphens,
-    /// limited to 10 characters. Returns empty string if input is null or empty.
-    /// </returns>
-    private static string SanitizePostalCode(string postalCode)
+    private static string SanitizePostalCode(string? postalCode)
     {
         if (string.IsNullOrEmpty(postalCode)) return string.Empty;
-        
-        // Remove any characters that aren't alphanumeric or hyphen
+
         var sanitized = new string(postalCode.Where(c => char.IsLetterOrDigit(c) || c == '-').ToArray());
-        
-        // Limit length to 10 characters
         return sanitized.Length > 10 ? sanitized[..10] : sanitized;
     }
 
     /// <summary>
-    /// Configures the payment processing endpoint that handles card transactions.
+    /// Configures the charge endpoint for payment processing.
     /// </summary>
-    /// <param name="app">The web application to configure</param>
-    private static void ConfigurePaymentEndpoint(WebApplication app)
+    private static void ConfigureChargeEndpoint(WebApplication app)
     {
-        app.MapPost("/process-payment", async (HttpContext context) =>
+        app.MapPost("/charge", async (HttpContext context) =>
         {
-            // Parse form data from the request
-            var form = await context.Request.ReadFormAsync();
-            var billingZip = form["billing_zip"].ToString();
-            var token = form["payment_token"].ToString();
-            var amountStr = form["amount"].ToString();
-
-            // Validate required fields are present
-            if (string.IsNullOrEmpty(token) || string.IsNullOrEmpty(billingZip) || string.IsNullOrEmpty(amountStr))
-            {
-                return Results.BadRequest(new {
-                    success = false,
-                    message = "Payment processing failed",
-                    error = new {
-                        code = "VALIDATION_ERROR",
-                        details = "Missing required fields"
-                    }
-                });
-            }
-
-            // Validate and parse amount
-            if (!decimal.TryParse(amountStr, out var amount) || amount <= 0)
-            {
-                return Results.BadRequest(new {
-                    success = false,
-                    message = "Payment processing failed",
-                    error = new {
-                        code = "VALIDATION_ERROR",
-                        details = "Amount must be a positive number"
-                    }
-                });
-            }
-
-            // Initialize payment data using tokenized card information
-            var card = new CreditCardData
-            {
-                Token = token
-            };
-
-            // Create billing address for AVS verification
-            var address = new Address
-            {
-                PostalCode = SanitizePostalCode(billingZip)
-            };
-
             try
             {
-                // Process the payment transaction using the provided amount
-                var response = card.Charge(amount)
-                    .WithAllowDuplicates(true)
-                    .WithCurrency("USD")
-                    .WithAddress(address)
-                    .Execute();
-
-                // Verify transaction was successful
-                if (response.ResponseCode != "00")
+                using var reader = new StreamReader(context.Request.Body);
+                var body = await reader.ReadToEndAsync();
+                var data = JsonSerializer.Deserialize<PaymentRequest>(body, new JsonSerializerOptions
                 {
-                    return Results.BadRequest(new {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (data == null || string.IsNullOrEmpty(data.PaymentToken))
+                {
+                    return Results.Json(new
+                    {
                         success = false,
-                        message = "Payment processing failed",
-                        error = new {
-                            code = "PAYMENT_DECLINED",
-                            details = response.ResponseMessage
+                        message = "Payment token is required",
+                        error_code = "VALIDATION_ERROR"
+                    }, statusCode: 400);
+                }
+
+                if (data.Amount <= 0)
+                {
+                    return Results.Json(new
+                    {
+                        success = false,
+                        message = "Valid amount is required",
+                        error_code = "VALIDATION_ERROR"
+                    }, statusCode: 400);
+                }
+
+                var card = new CreditCardData
+                {
+                    Token = data.PaymentToken
+                };
+
+                var chargeBuilder = card.Charge(data.Amount)
+                    .WithCurrency(data.Currency ?? "USD")
+                    .WithAllowDuplicates(true);
+
+                if (!string.IsNullOrEmpty(data.BillingZip))
+                {
+                    var address = new Address
+                    {
+                        PostalCode = SanitizePostalCode(data.BillingZip)
+                    };
+                    chargeBuilder.WithAddress(address);
+                }
+
+                var response = chargeBuilder.Execute();
+
+                if (response.ResponseCode == "SUCCESS" || response.ResponseCode == "00")
+                {
+                    return Results.Ok(new
+                    {
+                        success = true,
+                        message = "Payment processed successfully",
+                        data = new
+                        {
+                            transactionId = response.TransactionId,
+                            amount = data.Amount,
+                            currency = data.Currency ?? "USD",
+                            status = "captured",
+                            responseCode = response.ResponseCode,
+                            responseMessage = response.ResponseMessage ?? "CAPTURED",
+                            timestamp = DateTime.UtcNow.ToString("o"),
+                            authorizationCode = response.AuthorizationCode ?? "",
+                            referenceNumber = response.ReferenceNumber ?? "",
+                            paymentMethod = new
+                            {
+                                type = "card",
+                                brand = data.CardDetails?.CardType ?? "Unknown",
+                                last4 = data.CardDetails?.CardLast4 ?? "0000"
+                            }
                         }
                     });
                 }
-
-                // Return success response with transaction ID
-                return Results.Ok(new
+                else
                 {
-                    success = true,
-                    message = $"Payment successful! Transaction ID: {response.TransactionId}",
-                    data = new {
-                        transactionId = response.TransactionId
-                    }
-                });
-            } 
-            catch (ApiException ex)
+                    return Results.Json(new
+                    {
+                        success = false,
+                        message = $"Payment failed: {response.ResponseMessage}",
+                        error_code = "PAYMENT_DECLINED"
+                    }, statusCode: 422);
+                }
+            }
+            catch (Exception)
             {
-                // Handle payment processing errors
-                return Results.BadRequest(new {
+                return Results.Json(new
+                {
                     success = false,
-                    message = "Payment processing failed",
-                    error = new {
-                        code = "API_ERROR",
-                        details = ex.Message
-                    }
-                });
+                    message = "Internal server error",
+                    error_code = "SERVER_ERROR"
+                }, statusCode: 500);
             }
         });
     }
+
+    /// <summary>
+    /// Configures the refund endpoint for refund processing.
+    /// </summary>
+    private static void ConfigureRefundEndpoint(WebApplication app)
+    {
+        app.MapPost("/refund", async (HttpContext context) =>
+        {
+            try
+            {
+                using var reader = new StreamReader(context.Request.Body);
+                var body = await reader.ReadToEndAsync();
+                var data = JsonSerializer.Deserialize<RefundRequest>(body, new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (data == null || string.IsNullOrEmpty(data.TransactionId))
+                {
+                    return Results.Json(new
+                    {
+                        success = false,
+                        message = "Transaction ID is required",
+                        error_code = "VALIDATION_ERROR"
+                    }, statusCode: 400);
+                }
+
+                if (data.Amount <= 0)
+                {
+                    return Results.Json(new
+                    {
+                        success = false,
+                        message = "Valid refund amount is required",
+                        error_code = "VALIDATION_ERROR"
+                    }, statusCode: 400);
+                }
+
+                var transaction = Transaction.FromId(data.TransactionId);
+
+                var response = transaction.Refund(data.Amount)
+                    .WithCurrency(data.Currency ?? "USD")
+                    .WithAllowDuplicates(true)
+                    .Execute();
+
+                if (response.ResponseCode == "SUCCESS" || response.ResponseCode == "00")
+                {
+                    return Results.Ok(new
+                    {
+                        success = true,
+                        message = "Refund processed successfully",
+                        data = new
+                        {
+                            refundId = response.TransactionId,
+                            transactionId = data.TransactionId,
+                            amount = data.Amount,
+                            currency = data.Currency ?? "USD",
+                            status = "captured",
+                            responseCode = response.ResponseCode,
+                            responseMessage = response.ResponseMessage ?? "CAPTURED",
+                            timestamp = DateTime.UtcNow.ToString("o"),
+                            authorizationCode = response.AuthorizationCode ?? "",
+                            referenceNumber = response.ReferenceNumber ?? "",
+                            reason = data.Reason ?? "Refund requested"
+                        }
+                    });
+                }
+                else
+                {
+                    return Results.Json(new
+                    {
+                        success = false,
+                        message = $"Refund failed: {response.ResponseMessage}",
+                        error_code = "REFUND_DECLINED"
+                    }, statusCode: 422);
+                }
+            }
+            catch (Exception)
+            {
+                return Results.Json(new
+                {
+                    success = false,
+                    message = "Internal server error",
+                    error_code = "SERVER_ERROR"
+                }, statusCode: 500);
+            }
+        });
+    }
+}
+
+/// <summary>
+/// Payment request model
+/// </summary>
+public class PaymentRequest
+{
+    [JsonPropertyName("payment_token")]
+    public string? PaymentToken { get; set; }
+
+    [JsonPropertyName("amount")]
+    public decimal Amount { get; set; }
+
+    [JsonPropertyName("currency")]
+    public string? Currency { get; set; }
+
+    [JsonPropertyName("billing_zip")]
+    public string? BillingZip { get; set; }
+
+    [JsonPropertyName("cardDetails")]
+    public CardDetails? CardDetails { get; set; }
+}
+
+/// <summary>
+/// Card details model
+/// </summary>
+public class CardDetails
+{
+    [JsonPropertyName("cardType")]
+    public string? CardType { get; set; }
+
+    [JsonPropertyName("cardLast4")]
+    public string? CardLast4 { get; set; }
+}
+
+/// <summary>
+/// Refund request model
+/// </summary>
+public class RefundRequest
+{
+    [JsonPropertyName("transactionId")]
+    public string? TransactionId { get; set; }
+
+    [JsonPropertyName("amount")]
+    public decimal Amount { get; set; }
+
+    [JsonPropertyName("currency")]
+    public string? Currency { get; set; }
+
+    [JsonPropertyName("reason")]
+    public string? Reason { get; set; }
 }

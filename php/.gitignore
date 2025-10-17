@@ -6,3 +6,5 @@ composer.phar
 .DS_Store
 .idea/
 .vscode/
+data/
+logs/

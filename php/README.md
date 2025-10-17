@@ -1,99 +1,332 @@
-# PHP Card Payment Example
+# PHP Payment & Refund Tool
 
-This example demonstrates card payment processing using PHP and the Global Payments SDK.
+A simplified payment processing and refund management tool using PHP and the Global Payments SDK.
+
+## Features
+
+- **Single-Page Interface** - Streamlined UI with payment form and inline refund functionality
+- **Payment Processing** - Process credit card payments using Global Payments tokenization
+- **Instant Refunds** - Refund transactions immediately after processing (full or partial)
+- **Test Card Helper** - Built-in test card selector with auto-fill functionality
+- **No Database Required** - Stateless design, no transaction storage needed
+- **Duplicate Refund Prevention** - Automatically disables refund form after successful refund
 
 ## Requirements
 
-- PHP 7.4 or later
+- PHP 8.0 or later
 - Composer
-- Global Payments account and API credentials
+- Global Payments account and API credentials (GP API)
 
 ## Project Structure
 
-- `process-payment.php` - Payment processing script
-- `index.php` - Client-side payment form
-- `composer.json` - Project dependencies
-- `.env.sample` - Template for environment variables
-- `run.sh` - Convenience script to run the application
+```
+php/
+├── charge.php           # Payment processing endpoint
+├── refund.php           # Refund processing endpoint
+├── config.php           # Configuration and session token generation
+├── PaymentUtils.php     # Utility functions for GP API integration
+├── index.html           # Single-page frontend application
+├── composer.json        # Project dependencies
+├── .env.sample          # Template for environment variables
+└── run.sh              # Convenience script to run the application
+```
 
 ## Setup
 
-1. Clone this repository
-2. Copy `.env.sample` to `.env`
-3. Update `.env` with your Global Payments credentials:
-   ```
-   PUBLIC_API_KEY=pk_test_xxx
-   SECRET_API_KEY=sk_test_xxx
-   ```
-4. Install dependencies:
+1. **Install dependencies:**
    ```bash
    composer install
    ```
-5. Run the application:
+
+2. **Configure environment variables:**
+   ```bash
+   cp .env.sample .env
+   ```
+
+   Update `.env` with your Global Payments GP API credentials:
+   ```env
+   GP_API_APP_ID=your_app_id
+   GP_API_APP_KEY=your_app_key
+   GP_API_ENVIRONMENT=test  # or 'production'
+   ```
+
+3. **Run the application:**
    ```bash
    ./run.sh
    ```
+
    Or manually:
    ```bash
    php -S localhost:8000
    ```
 
-## Implementation Details
+4. **Access the application:**
+   Open your browser to `http://localhost:8000`
 
-### Application Structure
-The application uses a simple PHP structure:
-- Static HTML form for payment collection
-- Separate PHP script for payment processing
-- Composer for dependency management
+## Usage
 
-### SDK Configuration
-Global Payments SDK configuration using environment variables:
-- Loads credentials from .env file
-- Sets up service URL for API communication
-- Configures developer identification
+### Processing a Payment
 
-### Payment Processing
-Payment processing flow:
-1. Client submits payment token and billing zip
-2. Server creates CreditCardData with token
-3. Creates Address with postal code
-4. Processes $10 USD charge
-5. Returns success/error response
+1. Enter payment amount and billing zip code
+2. Select a test card from the dropdown (optional, for testing)
+3. Enter credit card information
+4. Click "Process Payment"
+5. Transaction details appear below the form upon success
 
-### Error Handling
-Implements comprehensive error handling:
-- Catches and processes API exceptions
-- Returns appropriate error messages
-- Handles edge cases gracefully
+### Processing a Refund
+
+1. After a successful payment, the refund section appears
+2. Choose "Full Refund" or "Partial Refund"
+3. For partial refunds, enter the refund amount
+4. Optionally enter a reason for the refund
+5. Click "Process Refund"
+6. Refund success/error message displays inline
+7. Refund form is automatically disabled to prevent duplicates
+
+### Test Cards
+
+The application includes official Global Payments test cards:
+
+- **Visa**: 4263970000005262
+- **Mastercard**: 5425230000004415
+- **American Express**: 374101000000608
+- **Discover**: 6011000000000087
+- **JCB**: 3566000000000000
+- **Diners Club**: 36256000000725
+
+All test cards use:
+- **CVV**: 123 (1234 for Amex)
+- **Expiry**: 12/2025
 
 ## API Endpoints
 
-### POST /process-payment.php
-Processes a payment using the provided token and billing information.
+### GET /config.php
+Generates a session token for client-side tokenization.
 
-Request Parameters:
-- `payment_token` (string, required) - Token from client-side SDK
-- `billing_zip` (string, required) - Billing postal code
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "accessToken": "session_token_here"
+  }
+}
+```
 
-Response (Success):
-```
-Payment successful! Transaction ID: xxx
+### POST /charge.php
+Processes a payment using the provided token.
+
+**Request Body:**
+```json
+{
+  "payment_token": "PMT_xxx",
+  "amount": 25.00,
+  "currency": "USD",
+  "billing_zip": "12345",
+  "cardDetails": {
+    "cardType": "visa",
+    "cardLast4": "5262"
+  }
+}
 ```
 
-Response (Error):
+**Response (Success):**
+```json
+{
+  "success": true,
+  "message": "Payment processed successfully",
+  "data": {
+    "transactionId": "TRN_xxx",
+    "amount": 25.00,
+    "currency": "USD",
+    "status": "captured",
+    "responseCode": "SUCCESS",
+    "responseMessage": "CAPTURED",
+    "timestamp": "2025-10-02T14:18:39+00:00",
+    "authorizationCode": "",
+    "referenceNumber": "08c055bd-9721-4844-b094-1238d8e76f33",
+    "paymentMethod": {
+      "type": "card",
+      "brand": "Visa",
+      "last4": "5262"
+    }
+  }
+}
 ```
-Error: [error message]
+
+### POST /refund.php
+Processes a refund for a transaction.
+
+**Request Body:**
+```json
+{
+  "transactionId": "TRN_xxx",
+  "amount": 25.00,
+  "currency": "USD",
+  "reason": "Customer request"
+}
+```
+
+**Response (Success):**
+```json
+{
+  "success": true,
+  "message": "Refund processed successfully",
+  "data": {
+    "refundId": "REF_xxx",
+    "transactionId": "TRN_xxx",
+    "amount": 25.00,
+    "currency": "USD",
+    "status": "captured",
+    "responseCode": "SUCCESS",
+    "responseMessage": "CAPTURED",
+    "timestamp": "2025-10-02T14:20:00+00:00",
+    "authorizationCode": "",
+    "referenceNumber": "abc123",
+    "reason": "Customer request"
+  }
+}
+```
+
+## Implementation Details
+
+### Stateless Architecture
+- No database or storage layer required
+- Transaction IDs are passed directly from frontend to backend
+- Each operation is independent and self-contained
+
+### Payment Processing Flow
+1. Frontend loads `config.php` to get session token
+2. Global Payments SDK tokenizes card data client-side
+3. Token is sent to `charge.php` for processing
+4. GP API processes payment and returns transaction ID
+5. Frontend stores transaction data for refund capability
+
+### Refund Processing Flow
+1. User initiates refund from success screen
+2. Transaction ID is sent to `refund.php` with refund amount
+3. GP API processes refund against original transaction
+4. Success/error message displayed inline
+5. Refund form is disabled to prevent duplicate refunds
+
+### Security Features
+- Client-side tokenization (no raw card data touches server)
+- CORS handling for cross-origin requests
+- Input validation and sanitization
+- Error message sanitization
+- Secure session token generation with limited permissions
+
+## Error Handling
+
+The application implements comprehensive error handling:
+
+- **Validation Errors**: Missing or invalid input parameters
+- **Payment Errors**: Card declined, insufficient funds, etc.
+- **Refund Errors**: Transaction not found, invalid amount, etc.
+- **API Errors**: Network issues, authentication failures, etc.
+
+All errors are logged server-side and user-friendly messages are displayed in the UI.
+
+## Development
+
+### File Descriptions
+
+**Backend:**
+- `PaymentUtils.php` - Core utility functions for GP API integration (CORS, SDK configuration, payment/refund processing)
+- `config.php` - Generates session tokens for client-side tokenization with limited permissions
+- `charge.php` - Handles payment processing requests, validates input, and returns transaction data
+- `refund.php` - Processes refund requests using transaction IDs from the client
+
+**Frontend:**
+- `index.html` - Single-page application with payment form, success display, and inline refund section
+
+### Customization
+
+**Modify Default Amount:**
+```html
+<!-- In index.html -->
+<input type="number" id="amount" name="amount" value="25.00" required>
+```
+
+**Change Currency:**
+```javascript
+// In index.html, submitPayment function
+currency: 'USD',  // Change to EUR, GBP, etc.
+```
+
+**Adjust Session Token Permissions:**
+```php
+// In config.php
+$config->permissions = ['PMT_POST_Create_Single'];
+```
+
+**Add Custom Validation:**
+```php
+// In charge.php or refund.php
+if (empty($data['your_field'])) {
+    PaymentUtils::sendErrorResponse(400, 'Your field is required', 'VALIDATION_ERROR');
+}
 ```
 
 ## Security Considerations
 
-This example demonstrates basic implementation. For production use, consider:
-- Implementing additional input validation
-- Adding request rate limiting
-- Including security headers
-- Implementing proper logging
-- Adding payment fraud prevention measures
-- Using HTTPS in production
-- Implementing CSRF protection
-- Configuring proper session handling
-- Setting appropriate PHP security directives
+**For Production Use:**
+
+- ✅ Use HTTPS only
+- ✅ Implement rate limiting
+- ✅ Add CSRF protection
+- ✅ Implement proper logging and monitoring
+- ✅ Set restrictive CORS policies
+- ✅ Validate all input data
+- ✅ Sanitize error messages
+- ✅ Use environment variables for all credentials
+- ✅ Set appropriate PHP security directives
+- ✅ Implement request signing/verification
+- ✅ Add fraud detection measures
+
+**Not Included (Add for Production):**
+- Request authentication/authorization
+- User session management
+- Advanced fraud detection
+- Transaction history/reporting
+- Email notifications
+- Webhook handling
+- Multi-currency support
+- Payment method management
+
+## Troubleshooting
+
+**Issue: "GlobalPayments failed to initialize"**
+- Check that the Global Payments JS SDK is loading correctly
+- Verify network connectivity to `js.globalpay.com`
+
+**Issue: "Configuration failed"**
+- Verify `.env` file exists with correct credentials
+- Check GP API credentials are valid and active
+- Ensure `GP_API_ENVIRONMENT` is set to `test` or `production`
+
+**Issue: "Payment token is required"**
+- Verify card form tokenization is completing successfully
+- Check browser console for JavaScript errors
+- Ensure all card fields are filled correctly
+
+**Issue: "Refund processing failed"**
+- Verify transaction ID is valid and in GP API system
+- Check that transaction hasn't already been fully refunded
+- Ensure refund amount doesn't exceed original transaction amount
+
+**Issue: "Memory exhaustion" (if you encounter this)**
+- This was an issue in a previous version with transaction storage
+- Current version has no storage layer and should not have memory issues
+- If encountered, check for infinite loops in custom code
+
+## License
+
+MIT License - See LICENSE file for details
+
+## Support
+
+For Global Payments API support, visit:
+- [Developer Documentation](https://developer.globalpay.com/)
+- [API Reference](https://developer.globalpay.com/api)
+- [SDKs](https://developer.globalpay.com/sdks)
