@@ -18,25 +18,6 @@ services:
       retries: 3
       start_period: 30s
 
-  python:
-    build: 
-      context: ./python
-      dockerfile: Dockerfile
-    ports:
-      - "8002:8000"
-    environment:
-      - PORT=8000
-      - PUBLIC_API_KEY=${PUBLIC_API_KEY}
-      - SECRET_API_KEY=${SECRET_API_KEY}
-    networks:
-      - payments
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8000/config"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-
   php:
     build: 
       context: ./php
@@ -73,25 +54,6 @@ services:
       retries: 3
       start_period: 60s
 
-  go:
-    build: 
-      context: ./go
-      dockerfile: Dockerfile
-    ports:
-      - "8005:8000"
-    environment:
-      - PORT=8000
-      - PUBLIC_API_KEY=${PUBLIC_API_KEY}
-      - SECRET_API_KEY=${SECRET_API_KEY}
-    networks:
-      - payments
-    healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8000/config"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 30s
-
   dotnet:
     build: 
       context: ./dotnet
@@ -119,13 +81,9 @@ services:
     depends_on:
       nodejs:
         condition: service_healthy
-      python:
-        condition: service_healthy
       php:
         condition: service_healthy
       java:
-        condition: service_healthy
-      go:
         condition: service_healthy
       dotnet:
         condition: service_healthy

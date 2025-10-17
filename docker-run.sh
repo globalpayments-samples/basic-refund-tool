@@ -52,7 +52,7 @@ build_images() {
 
 start_services() {
     echo -e "${BLUE}🚀 Starting payment services...${NC}"
-    docker-compose up -d nodejs python php java go dotnet
+    docker-compose up -d nodejs php java dotnet
     
     echo -e "${YELLOW}⏳ Waiting for services to be healthy...${NC}"
     docker-compose ps
@@ -61,7 +61,6 @@ start_services() {
     echo ""
     echo "Services available at:"
     echo "  Node.js: http://localhost:8001"
-    echo "  Python:  http://localhost:8002"
     echo "  PHP:     http://localhost:8003"
     echo "  Java:    http://localhost:8004"
     echo "  Go:      http://localhost:8005"
