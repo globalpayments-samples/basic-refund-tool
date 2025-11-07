@@ -4,12 +4,12 @@ This starter template provides a customizable foundation for Global Payments SDK
 
 ## Available Implementations
 
-- [.NET Core](./dotnet/) - ASP.NET Core web application
-- [Go](./go/) - Go HTTP server application
-- [Java](./java/) - Jakarta EE servlet-based web application
-- [Node.js](./nodejs/) - Express.js web application
-- [PHP](./php/) - PHP web application
-- [Python](./python/) - Flask web application
+- [.NET Core](./dotnet/) - ([Preview](https://githubbox.com/globalpayments-samples/basic-refund-tool/tree/main/dotnet)) - ASP.NET Core web application
+- [Go](./go/) - ([Preview](https://githubbox.com/globalpayments-samples/basic-refund-tool/tree/main/go)) - Go HTTP server application
+- [Java](./java/) - ([Preview](https://githubbox.com/globalpayments-samples/basic-refund-tool/tree/main/java)) - Jakarta EE servlet-based web application
+- [Node.js](./nodejs/) - ([Preview](https://githubbox.com/globalpayments-samples/basic-refund-tool/tree/main/nodejs)) - Express.js web application
+- [PHP](./php/) - ([Preview](https://githubbox.com/globalpayments-samples/basic-refund-tool/tree/main/php)) - PHP web application
+- [Python](./python/) - ([Preview](https://githubbox.com/globalpayments-samples/basic-refund-tool/tree/main/python)) - Flask web application
 
 ## Template Features
 
