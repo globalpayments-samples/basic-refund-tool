@@ -85,8 +85,8 @@ dotnet/
 
 The application includes official Global Payments test cards:
 
-- **Visa**: 4263970000005262
-- **Mastercard**: 5425230000004415
+- **Visa**: 4263982640269299
+- **Mastercard**: 5425233424241200
 - **American Express**: 374101000000608
 - **Discover**: 6011000000000087
 - **JCB**: 3566000000000000
@@ -323,6 +323,6 @@ MIT License - See LICENSE file for details
 ## Support
 
 For Global Payments API support, visit:
-- [Developer Documentation](https://developer.globalpay.com/)
-- [API Reference](https://developer.globalpay.com/api)
-- [SDKs](https://developer.globalpay.com/sdks)
+- [Developer Documentation](https://developer.globalpayments.com/)
+- [API Reference](https://developer.globalpayments.com/api/references-overview)
+- [SDKs](https://github.com/globalpayments/dotnet-sdk)
