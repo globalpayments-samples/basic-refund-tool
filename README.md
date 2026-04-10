@@ -52,7 +52,7 @@ Browser
 
 ## Prerequisites
 
-- Global Payments developer account — [Sign up at developer.globalpay.com](https://developer.globalpay.com)
+- Global Payments developer account — [Sign up at developer.globalpayments.com](https://developer.globalpayments.com)
 - GP API credentials: `APP_ID` and `APP_KEY` (sandbox credentials available after sign-up)
 - Docker (for multi-service setup), or a local runtime for your chosen language:
   - PHP 8.0+ with Composer
@@ -355,7 +355,7 @@ All language implementations use the same three variables:
 | `GP_API_APP_KEY` | Your GP API application key | `zCFrbrn0NKly9sB4` |
 | `GP_API_ENVIRONMENT` | `test` for sandbox, `production` for live | `test` |
 
-Credentials are available in the [GP Developer Portal](https://developer.globalpay.com) after creating an account.
+Credentials are available in the [GP Developer Portal](https://developer.globalpayments.com) after creating an account.
 
 ---
 
