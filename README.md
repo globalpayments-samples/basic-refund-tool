@@ -1,6 +1,6 @@
 # Basic Refund Tool
 
-A complete charge-and-refund implementation using the Global Payments GP API. Developers can charge a card using hosted tokenization, then issue a full or partial refund against any transaction ID — all without handling raw card data.
+A complete charge-and-refund implementation using the Global Payments GP API. Developers can charge a card using hosted tokenization, then issue a full or partial refund against any transaction ID — all without handling raw card data. All implementations use the official Global Payments SDK (`GpApiConfig`).
 
 Available in four languages: PHP, Node.js, .NET, and Java.
 
