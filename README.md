@@ -8,12 +8,12 @@ Available in four languages: PHP, Node.js, .NET, and Java.
 
 ## Available Implementations
 
-| Language | Framework | SDK Version | Port |
-|----------|-----------|-------------|------|
-| [**PHP**](./php/) | Built-in Server | globalpayments/php-sdk ^13.1 | 8003 |
-| [**Node.js**](./nodejs/) | Express.js | globalpayments-api ^3.10.6 | 8001 |
-| [**.NET**](./dotnet/) | ASP.NET Core | GlobalPayments.Api 9.0.16 | 8006 |
-| [**Java**](./java/) | Jakarta Servlet | globalpayments-sdk 14.2.20 | 8004 |
+| Language | Framework | SDK Version |
+|----------|-----------|-------------|
+| [**PHP**](./php/) | Built-in Server | globalpayments/php-sdk ^13.1 |
+| [**Node.js**](./nodejs/) | Express.js | globalpayments-api ^3.10.6 |
+| [**.NET**](./dotnet/) | ASP.NET Core | GlobalPayments.Api 9.0.16 |
+| [**Java**](./java/) | Jakarta Servlet | globalpayments-sdk 14.2.20 |
 
 Preview links (runs in browser via CodeSandbox):
 - [PHP Preview](https://githubbox.com/globalpayments-samples/basic-refund-tool/tree/main/php)
@@ -378,6 +378,16 @@ Requires Java 17+ and Maven 3.8+. Verify with `java -version` and `mvn -version`
 
 **.NET — `dotenv.net` missing**
 Run `dotnet restore` before `dotnet run` to install NuGet dependencies.
+
+## Community
+
+- 🌐 **Developer Portal** — [developer.globalpayments.com](https://developer.globalpayments.com)
+- 💬 **Discord** — [Join the community](https://discord.gg/myER9G9qkc)
+- 📋 **GitHub Discussions** — [github.com/globalpayments-samples](https://github.com/globalpayments-samples)
+- 📧 **Newsletter** — [Subscribe](https://www.globalpayments.com/en-gb/modals/newsletter)
+- 💼 **LinkedIn** — [Global Payments for Developers](https://www.linkedin.com/showcase/global-payments-for-developers/posts/?feedView=all)
+
+Have a question or found a bug? [Open an issue](https://github.com/globalpayments-samples/basic-refund-tool/issues) or reach out at [communityexperience@globalpay.com](mailto:communityexperience@globalpay.com).
 
 ---
 
