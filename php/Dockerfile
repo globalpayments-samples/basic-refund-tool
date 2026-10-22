@@ -1,4 +1,4 @@
-FROM php:8.3-cli
+FROM php:8.3.36-cli
 
 WORKDIR /app
 
@@ -10,6 +10,7 @@ RUN apt-get update && \
     libzip-dev \
     libxml2-dev \
     libcurl4-openssl-dev \
+    libicu-dev \
     && docker-php-ext-install \
     zip \
     dom \
