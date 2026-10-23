@@ -55,7 +55,7 @@ Browser
 - Global Payments developer account — [Sign up at developer.globalpayments.com](https://developer.globalpayments.com)
 - GP API credentials: `APP_ID` and `APP_KEY` (sandbox credentials available after sign-up)
 - Docker (for multi-service setup), or a local runtime for your chosen language:
-  - PHP 8.0+ with Composer
+  - PHP 8.2.35+, 8.3.36+, 8.4.27+, or 8.5.12+ with Composer
   - Node.js 18+ with npm
   - .NET 8.0 SDK
   - Java 17+ with Maven
