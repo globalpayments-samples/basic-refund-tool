@@ -13,7 +13,7 @@ A simplified payment processing and refund management tool using PHP and the Glo
 
 ## Requirements
 
-- PHP 8.0 or later
+- PHP 8.2.35+, 8.3.36+, 8.4.27+, or 8.5.12+ for the web server
 - Composer
 - Global Payments account and API credentials (GP API)
 
@@ -57,7 +57,7 @@ php/
 
    Or manually:
    ```bash
-   php -S localhost:8000
+   ./run.sh
    ```
 
 4. **Access the application:**
