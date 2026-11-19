@@ -13,7 +13,7 @@ A simplified payment processing and refund management tool using C# ASP.NET Core
 
 ## Requirements
 
-- .NET 9.0 or later
+- .NET 10.0 or later
 - Global Payments account and API credentials (GP API)
 
 ## Project Structure
