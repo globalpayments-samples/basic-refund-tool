@@ -13,7 +13,7 @@ A simplified payment processing and refund management tool using Java Jakarta EE
 
 ## Requirements
 
-- Java 17 or later
+- Java 21 or later
 - Maven
 - Global Payments account and API credentials (GP API)
 
