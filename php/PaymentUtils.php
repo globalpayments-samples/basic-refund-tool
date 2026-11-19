@@ -243,42 +243,42 @@ class PaymentUtils
                 'visa' => [
                     'number' => '4263970000005262',
                     'cvv' => '123',
-                    'expiry' => '12/2025',
+                    'expiry' => '12/' . ((int) date('Y') + 3),
                     'brand' => 'Visa',
                     'description' => 'Visa Success'
                 ],
                 'mastercard' => [
                     'number' => '5425230000004415',
                     'cvv' => '123',
-                    'expiry' => '12/2025',
+                    'expiry' => '12/' . ((int) date('Y') + 3),
                     'brand' => 'Mastercard',
                     'description' => 'Mastercard Success'
                 ],
                 'amex' => [
                     'number' => '374101000000608',
                     'cvv' => '1234',
-                    'expiry' => '12/2025',
+                    'expiry' => '12/' . ((int) date('Y') + 3),
                     'brand' => 'American Express',
                     'description' => 'American Express Success'
                 ],
                 'discover' => [
                     'number' => '6011000000000087',
                     'cvv' => '123',
-                    'expiry' => '12/2025',
+                    'expiry' => '12/' . ((int) date('Y') + 3),
                     'brand' => 'Discover',
                     'description' => 'Discover Success'
                 ],
                 'jcb' => [
                     'number' => '3566000000000000',
                     'cvv' => '123',
-                    'expiry' => '12/2025',
+                    'expiry' => '12/' . ((int) date('Y') + 3),
                     'brand' => 'JCB',
                     'description' => 'JCB Success'
                 ],
                 'diners' => [
                     'number' => '36256000000725',
                     'cvv' => '123',
-                    'expiry' => '12/2025',
+                    'expiry' => '12/' . ((int) date('Y') + 3),
                     'brand' => 'Diners Club',
                     'description' => 'Diners Club Success'
                 ]

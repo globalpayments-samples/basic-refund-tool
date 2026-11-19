@@ -94,7 +94,7 @@ The application includes official Global Payments test cards:
 
 All test cards use:
 - **CVV**: 123 (1234 for Amex)
-- **Expiry**: 12/2025
+- **Expiry**: Any future date
 
 ## API Endpoints
 
