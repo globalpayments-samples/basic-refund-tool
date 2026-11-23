@@ -30,7 +30,7 @@
 ### .NET (ASP.NET Core minimal API + Global Payments SDK)
 - [`dotnet/Program.cs`](dotnet/Program.cs) — `Main()`, `ConfigureGlobalPaymentsSDK()`, `ConfigureEndpoints()`, `ConfigureChargeEndpoint()`, `ConfigureRefundEndpoint()`, `SanitizePostalCode()`; request DTOs `PaymentRequest` / `RefundRequest` / `CardDetails`
 - [`dotnet/wwwroot/`](dotnet/wwwroot) — static frontend assets served by `UseDefaultFiles` / `UseStaticFiles`
-- [`dotnet/dotnet.csproj`](dotnet/dotnet.csproj) — `GlobalPayments.Api` 9.0.16, `DotEnv.Net` 3.2.1, net9.0
+- [`dotnet/dotnet.csproj`](dotnet/dotnet.csproj) — `GlobalPayments.Api` 9.0.16, `DotEnv.Net` 3.2.1, net10.0
 
 ### Java (Jakarta Servlet on embedded Tomcat 10 + Global Payments SDK)
 - [`java/src/main/java/com/globalpayments/example/ProcessPaymentServlet.java`](java/src/main/java/com/globalpayments/example/ProcessPaymentServlet.java) — single servlet mapped to `/config`, `/charge`, `/refund`; `doGet()` handles config, `doPost()` dispatches to `handleChargeRequest()` / `handleRefundRequest()`; `configureGpApiService()` builds the `GpApiConfig`; ships a hand-rolled `parseJsonString()` / `toJson()` instead of pulling in Jackson

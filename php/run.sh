@@ -14,4 +14,4 @@ composer install
 # Start the server
 HOST="${HOST:-127.0.0.1}"
 PORT="${PORT:-8000}"
-exec php -S "$HOST:$PORT"
+exec php -S "$HOST:$PORT" router.php

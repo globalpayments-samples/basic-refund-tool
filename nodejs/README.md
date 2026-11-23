@@ -13,7 +13,7 @@ A simplified payment processing and refund management tool using Node.js Express
 
 ## Requirements
 
-- Node.js 18.x or later
+- Node.js 24.x or later
 - npm (Node Package Manager)
 - Global Payments account and API credentials (GP API)
 
