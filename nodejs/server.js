@@ -12,6 +12,7 @@
 
 import express from 'express';
 import { fileURLToPath } from 'url';
+import { readFileSync } from 'fs';
 import * as dotenv from 'dotenv';
 import {
     ServicesContainer,
@@ -34,7 +35,8 @@ const port = process.env.PORT || 8000;
 
 // Serve the page and its own assets only, not the server code, package files or .env
 const indexFile = fileURLToPath(new URL('./index.html', import.meta.url));
-app.get(['/', '/index.html'], (req, res) => res.sendFile(indexFile));
+const indexHtml = readFileSync(indexFile, 'utf8');
+app.get(['/', '/index.html'], (req, res) => res.type('html').send(indexHtml));
 app.use(express.urlencoded({ extended: true })); // Parse form data
 app.use(express.json()); // Parse JSON requests
 
