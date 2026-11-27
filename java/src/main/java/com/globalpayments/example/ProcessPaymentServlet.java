@@ -115,9 +115,9 @@ public class ProcessPaymentServlet extends HttpServlet {
             // Set permissions specifically for client-side tokenization
             config.setPermissions(new String[]{"PMT_POST_Create_Single"});
 
-            // Configure service
-            ServicesContainer.configureService(config);
-
+            // Only mint the token here. Registering this config with the ServicesContainer
+            // would swap the shared server config for a tokenization only one, so any charge
+            // or refund running at the same time would fail.
             // Generate session token for client-side tokenization
             com.global.api.entities.gpApi.entities.AccessTokenInfo tokenInfo = GpApiService.generateTransactionKey(config);
 
@@ -152,7 +152,7 @@ public class ProcessPaymentServlet extends HttpServlet {
 
             sendSuccessResponse(response, data, "Configuration loaded successfully");
 
-        } catch (ConfigurationException e) {
+        } catch (ApiException e) {
             log("Configuration error: " + e.getMessage());
             sendErrorResponse(response, 500, "Error loading configuration: " + e.getMessage(), "CONFIG_ERROR");
         } catch (Exception e) {
