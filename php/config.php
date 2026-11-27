@@ -79,6 +79,7 @@ try {
 
     } catch (Exception $e) {
         error_log('Session token generation failed: ' . $e->getMessage());
+        throw $e;
     }
 
     // Return configuration for Basic Refund Tool
