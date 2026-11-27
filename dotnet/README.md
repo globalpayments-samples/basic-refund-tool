@@ -59,7 +59,7 @@ dotnet/
    ```
 
 4. **Access the application:**
-   Open your browser to `http://localhost:5000`
+   Open your browser to `http://localhost:8000` (set `PORT` to change it)
 
 ## Usage
 

@@ -60,11 +60,11 @@ java/
 
    Or manually:
    ```bash
-   mvn jetty:run
+   mvn clean package cargo:run
    ```
 
 4. **Access the application:**
-   Open your browser to `http://localhost:8080`
+   Open your browser to `http://localhost:8000` (the port is set in `pom.xml`)
 
 ## Usage
 

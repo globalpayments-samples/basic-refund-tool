@@ -99,21 +99,21 @@ Open the local URL printed by the PHP server.
 npm install
 npm start
 ```
-Open: http://localhost:8001
+Open: http://localhost:8000
 
 **.NET:**
 ```bash
 dotnet restore
 dotnet run
 ```
-Open: http://localhost:8006
+Open: http://localhost:8000
 
 **Java:**
 ```bash
 mvn clean package
 mvn cargo:run
 ```
-Open: http://localhost:8004
+Open: http://localhost:8000
 
 ### 4. Run a charge and refund
 
