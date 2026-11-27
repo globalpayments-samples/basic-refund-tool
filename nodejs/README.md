@@ -58,7 +58,7 @@ nodejs/
    ```
 
 4. **Access the application:**
-   Open your browser to `http://localhost:3000`
+   Open your browser to `http://localhost:8000` (set `PORT` to change it)
 
 ## Usage
 
