@@ -226,6 +226,25 @@ public class Program
                     }, statusCode: 422);
                 }
             }
+            catch (JsonException)
+            {
+                return Results.Json(new
+                {
+                    success = false,
+                    message = "Invalid JSON body",
+                    error_code = "VALIDATION_ERROR"
+                }, statusCode: 400);
+            }
+            catch (ApiException)
+            {
+                // GP API rejected the request (bad token, unknown transaction, amount over the limit)
+                return Results.Json(new
+                {
+                    success = false,
+                    message = "Payment processing failed",
+                    error_code = "PAYMENT_ERROR"
+                }, statusCode: 422);
+            }
             catch (Exception)
             {
                 return Results.Json(new
@@ -312,6 +331,25 @@ public class Program
                         error_code = "REFUND_DECLINED"
                     }, statusCode: 422);
                 }
+            }
+            catch (JsonException)
+            {
+                return Results.Json(new
+                {
+                    success = false,
+                    message = "Invalid JSON body",
+                    error_code = "VALIDATION_ERROR"
+                }, statusCode: 400);
+            }
+            catch (ApiException)
+            {
+                // GP API rejected the request (bad token, unknown transaction, amount over the limit)
+                return Results.Json(new
+                {
+                    success = false,
+                    message = "Refund processing failed",
+                    error_code = "REFUND_ERROR"
+                }, statusCode: 422);
             }
             catch (Exception)
             {
