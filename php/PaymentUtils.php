@@ -31,7 +31,8 @@ class PaymentUtils
         $config = new GpApiConfig();
         $config->appId = $_ENV['GP_API_APP_ID'] ?? '';
         $config->appKey = $_ENV['GP_API_APP_KEY'] ?? '';
-        $config->environment = Environment::TEST; // Use Environment::PRODUCTION for live transactions
+        $environment = $_ENV['GP_API_ENVIRONMENT'] ?? 'sandbox';
+        $config->environment = strtolower($environment) === 'production' ? Environment::PRODUCTION : Environment::TEST;
         $config->channel = Channel::CardNotPresent;
         $config->country = 'US';
 
